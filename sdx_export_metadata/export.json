@@ -1,0 +1,37 @@
+{
+  "version": "2021.1",
+  "applications": [],
+  "platforms": [],
+  "systems": [
+    {
+      "name": "cnn_system",
+      "platform": "/opt/xilinx/platforms/xilinx_zcu102_base_202110_1/xilinx_zcu102_base_202110_1.xpfm",
+      "sysConfig": "xilinx_zcu102_base_202110_1",
+      "buildConfig": "Emulation-SW",
+      "applications": [
+        {
+          "name": "cnn_system_hw_link",
+          "platform": "/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/platforms/2021.1/xilinx_zcu102_base_202110_1/xilinx_zcu102_base_202110_1.xpfm",
+          "sysConfig": "xilinx_zcu102_base_202110_1",
+          "domain": "pl",
+          "system": "cnn_system"
+        },
+        {
+          "name": "cnn_kernels",
+          "platform": "/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/platforms/2021.1/xilinx_zcu102_base_202110_1/xilinx_zcu102_base_202110_1.xpfm",
+          "sysConfig": "xilinx_zcu102_base_202110_1",
+          "domain": "",
+          "system": "cnn_system"
+        },
+        {
+          "name": "cnn",
+          "platform": "/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/platforms/2021.1/xilinx_zcu102_base_202110_1/xilinx_zcu102_base_202110_1.xpfm",
+          "sysConfig": "xilinx_zcu102_base_202110_1",
+          "domain": "xrt",
+          "system": "cnn_system"
+        }
+      ]
+    }
+  ],
+  "others": []
+}

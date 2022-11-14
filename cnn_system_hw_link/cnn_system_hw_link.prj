@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="ASCII"?>
+<hwlink:HwLinkProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:hwlink="http://www.xilinx.com/acceleration/hwlink" name="cnn_system_hw_link" platform="/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/platforms/2021.1/xilinx_zcu102_base_202110_1/xilinx_zcu102_base_202110_1.xpfm" platformUID="xilinx.com:xd:xilinx_zcu102_base_202110_1:202110.1(custom)" systemProject="cnn_system" sysConfig="xilinx_zcu102_base_202110_1" cpu="pl">
+  <configuration name="Emulation-SW" id="com.xilinx.ide.accel.config.hwlink.sw_emu.1635011586">
+    <configBuildOptions xsi:type="hwlink:LinkOptions">
+      <binaryContainers name="binary_container_1">
+        <kernels name="krnl_cnn_layer1" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer1_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_0">
+        <kernels name="krnl_cnn_layer0" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer0_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_X">
+        <kernels name="krnl_cnn_layerX" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layerX_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+            <args name="r_ofm"/>
+            <args name="c_ofm"/>
+            <args name="m_ofm"/>
+            <args name="n_ifm"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+    </configBuildOptions>
+    <lastBuildOptions xsi:type="hwlink:LinkOptions">
+      <binaryContainers name="binary_container_1">
+        <kernels name="krnl_cnn_layer1" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer1_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_0">
+        <kernels name="krnl_cnn_layer0" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer0_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_X">
+        <kernels name="krnl_cnn_layerX" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layerX_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+            <args name="r_ofm"/>
+            <args name="c_ofm"/>
+            <args name="m_ofm"/>
+            <args name="n_ifm"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+    </lastBuildOptions>
+  </configuration>
+  <configuration name="Emulation-HW" id="com.xilinx.ide.accel.config.hwlink.hw_emu.1189603974">
+    <configBuildOptions xsi:type="hwlink:LinkOptions" target="hw_emu">
+      <binaryContainers name="binary_container_1">
+        <kernels name="krnl_cnn_layer1" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer1_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_0">
+        <kernels name="krnl_cnn_layer0" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer0_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_X">
+        <kernels name="krnl_cnn_layerX" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layerX_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+            <args name="r_ofm"/>
+            <args name="c_ofm"/>
+            <args name="m_ofm"/>
+            <args name="n_ifm"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+    </configBuildOptions>
+    <lastBuildOptions xsi:type="hwlink:LinkOptions" target="hw_emu">
+      <binaryContainers name="binary_container_1">
+        <kernels name="krnl_cnn" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+    </lastBuildOptions>
+  </configuration>
+  <configuration name="Hardware" id="com.xilinx.ide.accel.config.hwlink.hw.917448481">
+    <configBuildOptions xsi:type="hwlink:LinkOptions" target="hw">
+      <binaryContainers name="binary_container_1">
+        <kernels name="krnl_cnn_layer1" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer1_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_0">
+        <kernels name="krnl_cnn_layer0" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer0_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_X">
+        <kernels name="krnl_cnn_layerX" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layerX_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+            <args name="r_ofm"/>
+            <args name="c_ofm"/>
+            <args name="m_ofm"/>
+            <args name="n_ifm"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+    </configBuildOptions>
+    <lastBuildOptions xsi:type="hwlink:LinkOptions" target="hw">
+      <binaryContainers name="binary_container_1">
+        <kernels name="krnl_cnn_layer1" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer1_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_0">
+        <kernels name="krnl_cnn_layer0" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layer0_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+      <binaryContainers name="binary_container_X">
+        <kernels name="krnl_cnn_layerX" projectName="cnn_kernels">
+          <computeUnits name="krnl_cnn_layerX_1" slr="">
+            <args name="input" master="true" memory=""/>
+            <args name="weights" master="true" memory=""/>
+            <args name="output" master="true" memory=""/>
+            <args name="batch_size"/>
+            <args name="r_ofm"/>
+            <args name="c_ofm"/>
+            <args name="m_ofm"/>
+            <args name="n_ifm"/>
+          </computeUnits>
+        </kernels>
+      </binaryContainers>
+    </lastBuildOptions>
+  </configuration>
+</hwlink:HwLinkProject>

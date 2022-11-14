@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ASCII"?>
+<systemproject:SystemProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:systemproject="http://www.xilinx.com/systemproject" name="cnn_system" platform="/opt/xilinx/platforms/xilinx_zcu102_base_202110_1/xilinx_zcu102_base_202110_1.xpfm" platformUID="xilinx.com:xd:xilinx_zcu102_base_202110_1:202110.1" sysConfig="xilinx_zcu102_base_202110_1" dimmRepoPath="" rootFSLocation="/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/petalinux/2021.1/rootfs.ext4" linuxImage="/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/petalinux/2021.1/Image" sysroot="/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/petalinux/2021.1/sysroots/cortexa72-cortexa53-xilinx-linux">
+  <configuration name="Emulation-SW" id="com.xilinx.sdx.system.managedbuilder.swemu.configuration.519370701">
+    <configBuildOptions xsi:type="systemproject:SystemOptions">
+      <applications name="cnn_system_hw_link" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-SW"/>
+      <applications name="cnn_kernels" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-SW"/>
+      <applications name="cnn" domainName="linux_domain" domainPrettyName="petalinux" appBuildConfig="Emulation-SW"/>
+    </configBuildOptions>
+    <lastBuildOptions xsi:type="systemproject:SystemOptions">
+      <applications name="cnn_system_hw_link" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-SW"/>
+      <applications name="cnn_kernels" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-SW"/>
+      <applications name="cnn" domainName="linux_domain" domainPrettyName="petalinux" appBuildConfig="Emulation-SW"/>
+    </lastBuildOptions>
+  </configuration>
+  <configuration name="Emulation-HW" id="com.xilinx.sdx.system.managedbuilder.hwemu.configuration.648191898">
+    <configBuildOptions xsi:type="systemproject:SystemOptions" target="hw_emu">
+      <applications name="cnn_system_hw_link" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-HW"/>
+      <applications name="cnn_kernels" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-HW"/>
+      <applications name="cnn" domainName="xrt" domainPrettyName="xrt" appBuildConfig="Emulation-HW"/>
+    </configBuildOptions>
+    <lastBuildOptions xsi:type="systemproject:SystemOptions" target="hw_emu">
+      <applications name="cnn_system_hw_link" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-HW"/>
+      <applications name="cnn_kernels" domainName="" domainPrettyName="pl" appBuildConfig="Emulation-HW"/>
+      <applications name="cnn" domainName="xrt" domainPrettyName="xrt" appBuildConfig="Emulation-HW"/>
+    </lastBuildOptions>
+  </configuration>
+  <configuration name="Hardware" id="com.xilinx.sdx.system.managedbuilder.hw.configuration.124444725">
+    <configBuildOptions xsi:type="systemproject:SystemOptions" target="hw">
+      <applications name="cnn_system_hw_link" domainName="" domainPrettyName="pl" appBuildConfig="Hardware"/>
+      <applications name="cnn_kernels" domainName="" domainPrettyName="pl" appBuildConfig="Hardware"/>
+      <applications name="cnn" domainName="xrt" domainPrettyName="xrt" appBuildConfig="Hardware"/>
+    </configBuildOptions>
+    <lastBuildOptions xsi:type="systemproject:SystemOptions" target="hw">
+      <applications name="cnn_system_hw_link" domainName="" domainPrettyName="pl" appBuildConfig="Hardware"/>
+      <applications name="cnn_kernels" domainName="" domainPrettyName="pl" appBuildConfig="Hardware"/>
+      <applications name="cnn" domainName="xrt" domainPrettyName="xrt" appBuildConfig="Hardware"/>
+    </lastBuildOptions>
+  </configuration>
+</systemproject:SystemProject>
