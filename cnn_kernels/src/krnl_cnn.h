@@ -62,16 +62,16 @@ typedef uint32_t index_t;
 #define TM_X (4) // output depth
 #define TN_X (4) // input depth
 
-#define ARRAYi_X(ptr,iB,iN,iR,iC,dB,dN,dR,dC)               \
-((ptr)[(iB)*(dN)*(dR)*(dC)+(iN)*(dR)*(dC)+(iR)*(dC)+(iC)])
+#define ARRAYi_X(ptr, iR, iC, dR, dC)               \
+((ptr)[(iR)*(dC) + iC])
 
 // Must use same macro as input so that the same kernel
 // can be used for layer 0 and layer 1
-#define ARRAYo_X(ptr,iB,iM,iR,iC,dB,dM,dR,dC)               \
-ARRAYi_X(ptr,iB,iM,iR,iC,dB,dM,dR,dC)
+#define ARRAYo_X(ptr, iR, iC, dR, dC)               \
+((ptr)[(iR)*(dC) + iC])
 
-#define ARRAYw_X(ptr,iM,iN,iR,iC,dM,dN,dR,dC)               \
-((ptr)[(iM)*(dN)*(dR)*(dC)+(iN)*(dR)*(dC)+(iR)*(dC)+(iC)])
+#define ARRAYw_X(ptr, iR, iC, dR, dC)               \
+((ptr)[(iR)*(dC) + iC])
 
 /////////////////////////////////////////////////////////////
 // The below are used by the host side code.

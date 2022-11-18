@@ -87,20 +87,20 @@ void strassen_32x32(const cnndata_t* inA, const cnndata_t* inB,
 // initialize inputs
 for (j = 0; j < 16; j++) {
   for (k = 0; k < 16; k++) {
-      inputs[0][j][k] = ? // A11+A22
-      inputs[1][j][k] = ? // B11+B22
-      inputs[2][j][k] = ? // A21+A22
-      inputs[3][j][k] = ? // B11
-      inputs[4][j][k] = ? // A11
-      inputs[5][j][k] = ? // B12-B22
-      inputs[6][j][k] = ? // A22
-      inputs[7][j][k] = ? // B21-B11
-      inputs[8][j][k] = ? // A11+A12
-      inputs[9][j][k] = ? // B22
-      inputs[10][j][k] = ? // A21-A11
-      inputs[11][j][k] = ? // B11+B12
-      inputs[12][j][k] = ? // A12-A22
-      inputs[13][j][k] = ? // B21+B22
+      inputs[0][j][k] = ARRAYi_X(inA, j, k, 32, 32) + ARRAYi_X(inA, j+16, k+16, 32, 32); // A11+A22
+      inputs[1][j][k] = ARRAYi_X(inB, j, k, 32, 32) + ARRAYi_X(inB, j+16, k+16, 32, 32); // B11+B22
+      inputs[2][j][k] = ARRAYi_X(inA, j+16, k, 32, 32) + ARRAYi_X(inA, j+16, k+16, 32, 32); // A21+A22
+      inputs[3][j][k] = ARRAYi_X(inB, j, k, 32, 32); // B11
+      inputs[4][j][k] = ARRAYi_X(inA, j, k, 32, 32); // A11
+      inputs[5][j][k] = ARRAYi_X(inB, j, k+16, 32, 32) - ARRAYi_X(inB, j+16, k+16, 32, 32); // B12-B22
+      inputs[6][j][k] = ARRAYi_X(inA, j+16, k+16, 32, 32); // A22
+      inputs[7][j][k] = ARRAYi_X(inB, j+16, k, 32, 32) - ARRAYi_X(inB, j, k, 32, 32); // B21-B11
+      inputs[8][j][k] = ARRAYi_X(inA, j, k, 32, 32) +  ARRAYi_X(inA, j, k+16, 32, 32);// A11+A12
+      inputs[9][j][k] = ARRAYi_X(inB, j+16, k+16, 32, 32); // B22
+      inputs[10][j][k] = ARRAYi_X(inA, j+16, k, 32, 32) - ARRAYi_X(inA, j, k, 32, 32); // A21-A11
+      inputs[11][j][k] = ARRAYi_X(inB, j, k, 32, 32) + ARRAYi_X(inB, j+16, k+16, 32, 32); // B11+B12
+      inputs[12][j][k] = ARRAYi_X(inA, j, k+16, 32, 32) - ARRAYi_X(inA, j+16, k+16, 32, 32); // A12-A22
+      inputs[13][j][k] = ARRAYi_X(inB, j+16, k, 32, 32) + ARRAYi_X(inB, j+16, k+16, 32, 32); // B21+B22
   }
 }
 
@@ -109,12 +109,18 @@ for (i = 0; i < 7; i++) {
 }
 
 // create outputs
+/*
+    output[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+    output[j][k+8] = mults[2][j][k] + mults[4][j][k];  // C12
+    output[j+8][k] = mults[3][j][k] + mults[5][j][k];  // C21
+    output[j+8][k+8] = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
+*/
 for (j = 0; j < 16; j++) {
   for (k = 0; k < 16; k++) {
-      output[X][Y] = ?  // C11
-      output[X][Y] = ?  // C12
-      output[X][Y] = ?  // C21
-      output[X][Y] = ?  // C22
+    ARRAYi_X(outC, j, k, 32, 32) = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+    ARRAYi_X(outC, j, k+16, 32, 32) = mults[2][j][k] + mults[4][j][k];  // C12
+    ARRAYi_X(outC, j+16, k, 32, 32) = mults[3][j][k] + mults[5][j][k];  // C21
+    ARRAYi_X(outC, j+16, k+16, 32, 32) = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
 
   }
 }
