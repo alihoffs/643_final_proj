@@ -45,7 +45,9 @@ typedef unsigned short int uint16_t;
 #define VRANGE 256
 
 // 4D array in natural layout
-#define ARRAY4(ptr,iB,iN,iR,iC,dB,dN,dR,dC)                 \
-((ptr)[(iB)*(dN)*(dR)*(dC)+(iN)*(dR)*(dC)+(iR)*(dC)+(iC)])
+// #define ARRAY4(ptr,iB,iN,iR,iC,dB,dN,dR,dC)                 \
+// ((ptr)[(iB)*(dN)*(dR)*(dC)+(iN)*(dR)*(dC)+(iR)*(dC)+(iC)])
+#define ARRAY2(ptr,iR,iC, dR,dC)                 \
+((ptr)[(iR)*(dC)+(iC)])
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))

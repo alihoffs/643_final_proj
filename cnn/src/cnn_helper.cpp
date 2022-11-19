@@ -50,16 +50,16 @@ void cnn_run_kernel(cl_object &cl_obj, krnl_object &krnl_obj0,
     std::cout << "Running kernel for layer 0..." << std::endl;
 
     // Get i/o buffers from kernel object
-    cl::Buffer *buffer_in = &cl_obj.buffers[0];
-    cl::Buffer *buffer_wts = &cl_obj.buffers[1];
+    cl::Buffer *buffer_inA = &cl_obj.buffers[0];
+    cl::Buffer *buffer_inB = &cl_obj.buffers[1];
     cl::Buffer *buffer_out = &cl_obj.buffers[2];
 
     // Set the kernel Arguments
     uint64_t narg = 0;
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_in));            // input
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_wts));           // weights
+    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_inA));            // input
+    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_inB));           // weights
     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_out));           // output
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) BATCH_SIZE)); // batch size
+    // OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) BATCH_SIZE)); // batch size
 
 #ifndef ENABLE_DFX
     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) R_OFM(0)));   // Rows
@@ -69,7 +69,7 @@ void cnn_run_kernel(cl_object &cl_obj, krnl_object &krnl_obj0,
 #endif
 
     // Data will be migrated to kernel space
-    OCL_CHECK(err, err = cl_obj.q.enqueueMigrateMemObjects({*buffer_in, *buffer_wts}, 0/* 0 means from host*/));
+    OCL_CHECK(err, err = cl_obj.q.enqueueMigrateMemObjects({*buffer_inA, *buffer_inB}, 0/* 0 means from host*/)); // flushes kernel cache
 
     // Launch the Kernel; this is nonblocking.
     OCL_CHECK(err, err = cl_obj.q.enqueueTask(*cl_obj.krnl));
@@ -77,53 +77,53 @@ void cnn_run_kernel(cl_object &cl_obj, krnl_object &krnl_obj0,
     // The result of the previous kernel execution will need to be retrieved in
     // order to view the results. This call will transfer the data from FPGA to
     // source_results vector
-    OCL_CHECK(err, cl_obj.q.enqueueMigrateMemObjects({*buffer_out}, CL_MIGRATE_MEM_OBJECT_HOST));
+    OCL_CHECK(err, cl_obj.q.enqueueMigrateMemObjects({*buffer_out}, CL_MIGRATE_MEM_OBJECT_HOST)); // flushes kernel cache
 
     // Wait for all tasks to finish
     OCL_CHECK(err, cl_obj.q.finish());
 
     //
-    // Layer 1
+    // Layer 1 -- should be garbage
     //
-#ifdef ENABLE_DFX
-    std::cout << "---- Using DFX :D ----" << std::endl;
-    program_kernel(cl_obj, krnl_obj1);
-#endif
+// #ifdef ENABLE_DFX
+//     std::cout << "---- Using DFX :D ----" << std::endl;
+//     program_kernel(cl_obj, krnl_obj1);
+// #endif
 
-    std::cout << "Running kernel for layer 1..." << std::endl;
+//     std::cout << "Running kernel for layer 1..." << std::endl;
 
-    // Get i/o buffers from kernel object
-    buffer_in = &cl_obj.buffers[2];
-    buffer_wts = &cl_obj.buffers[3];
-    buffer_out = &cl_obj.buffers[4];
+//     // Get i/o buffers from kernel object
+//     buffer_in = &cl_obj.buffers[2];
+//     buffer_wts = &cl_obj.buffers[3];
+//     buffer_out = &cl_obj.buffers[4];
 
-    // Set the kernel Arguments
-    narg = 0;
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_in));            // input
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_wts));           // weights
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_out));           // output
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) BATCH_SIZE)); // batch size
+//     // Set the kernel Arguments
+//     narg = 0;
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_in));            // input
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_wts));           // weights
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, *buffer_out));           // output
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) BATCH_SIZE)); // batch size
 
-#ifndef ENABLE_DFX
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) R_OFM(1)));   // Rows
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) C_OFM(1)));   // Cols
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) M_OFM(1)));   // Output channels
-    OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) N_IFM(1)));   // Input channels
-#endif
+// #ifndef ENABLE_DFX
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) R_OFM(1)));   // Rows
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) C_OFM(1)));   // Cols
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) M_OFM(1)));   // Output channels
+//     OCL_CHECK(err, err = cl_obj.krnl->setArg(narg++, (uint64_t) N_IFM(1)));   // Input channels
+// #endif
 
-    // Data will be migrated to kernel space
-    OCL_CHECK(err, err = cl_obj.q.enqueueMigrateMemObjects({*buffer_in, *buffer_wts},0/* 0 means from host*/));
+//     // Data will be migrated to kernel space
+//     OCL_CHECK(err, err = cl_obj.q.enqueueMigrateMemObjects({*buffer_in, *buffer_wts},0/* 0 means from host*/));
 
-    // Launch the Kernel; this is nonblocking.
-    OCL_CHECK(err, err = cl_obj.q.enqueueTask(*cl_obj.krnl));
+//     // Launch the Kernel; this is nonblocking.
+//     OCL_CHECK(err, err = cl_obj.q.enqueueTask(*cl_obj.krnl));
 
-    // The result of the previous kernel execution will need to be retrieved in
-    // order to view the results. This call will transfer the data from FPGA to
-    // source_results vector
-    OCL_CHECK(err, cl_obj.q.enqueueMigrateMemObjects({*buffer_out}, CL_MIGRATE_MEM_OBJECT_HOST));
+//     // The result of the previous kernel execution will need to be retrieved in
+//     // order to view the results. This call will transfer the data from FPGA to
+//     // source_results vector
+//     OCL_CHECK(err, cl_obj.q.enqueueMigrateMemObjects({*buffer_out}, CL_MIGRATE_MEM_OBJECT_HOST));
 
-    // Wait for all tasks to finish
-    OCL_CHECK(err, cl_obj.q.finish());
+//     // Wait for all tasks to finish
+//     OCL_CHECK(err, cl_obj.q.finish());
 
     std::cout << "Kernel executions completed" << std::endl;
 }
@@ -138,6 +138,7 @@ static const std::string cnn_error_message =
         "i = %d CPU result = %d Device result = %d\n";
 
 // Verify a single batch of data
+/*
 bool verify(cnndata_t *ref, cnndata_t *checkit, uint64_t iter, uint64_t layer) {
     uint64_t row, col, to;
 
@@ -245,3 +246,4 @@ void ZhangIsfpga15_1_fp(cnndata_t *input, cnndata_t *output, cnndata_t *weights,
       }
     }
 }
+*/

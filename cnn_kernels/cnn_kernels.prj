@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ASCII"?>
 <hwkernel:HwKernelProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:hwkernel="http://www.xilinx.com/acceleration/hwkernel" name="cnn_kernels" platform="/afs/ece.cmu.edu/class/ece643/software/xilinxVitis/platforms/2021.1/xilinx_zcu102_base_202110_1/xilinx_zcu102_base_202110_1.xpfm" platformUID="xilinx.com:xd:xilinx_zcu102_base_202110_1:202110.1(custom)" systemProject="cnn_system" sysConfig="xilinx_zcu102_base_202110_1" cpu="">
-  <configuration name="Emulation-SW" id="com.xilinx.ide.accel.config.hwkernel.sw_emu.548008822" dirty="true">
+  <configuration name="Emulation-SW" id="com.xilinx.ide.accel.config.hwkernel.sw_emu.548008822">
     <configBuildOptions xsi:type="hwkernel:KernelOptions" kernelDebug="true">
       <kernels name="krnl_cnn_layerX" sourceFile="src/krnl_cnn.cpp">
         <args name="input" master="true"/>

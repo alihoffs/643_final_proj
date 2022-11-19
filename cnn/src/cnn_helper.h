@@ -64,14 +64,12 @@ void ZhangIsfpga15_1_fp(cnndata_t *input, cnndata_t *output, cnndata_t *weights,
       uint64_t iter, uint64_t layer);
 
 // Copy between different memory layouts
-#define COPY_BUF4D(fromPtr, fromAcc, toPtr, toAcc, dB, dN, dR, dC)          \
-for (int b = 0; b < (dB); b++) {                                            \
-    for (int n = 0; n < (dN); n++) {                                        \
+#define COPY_BUF2D(fromPtr, fromAcc, toPtr, toAcc, dR, dC)          \
+                                      \
         for (int r = 0; r < (dR); r++) {                                    \
             for (int c = 0; c < (dC); c++) {                                \
-                toAcc((toPtr), b, n, r, c, (dB), (dN), (dR), (dC)) =	    \
-                    fromAcc((fromPtr), b, n, r, c, (dB), (dN), (dR), (dC));	\
+                toAcc((toPtr), r, c, (dR), (dC)) =	    \
+                    fromAcc((fromPtr), r, c, (dR), (dC));	\
             }                                                               \
         }                                                                   \
-    }                                                                       \
-}
+

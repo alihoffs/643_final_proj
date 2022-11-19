@@ -76,8 +76,7 @@ void strassen_2x2(cnndata_t InA[2][2],
 extern "C" {
 #endif
 void strassen_32x32(const cnndata_t* inA, const cnndata_t* inB,
-        cnndata_t* outC, /*uint64_t batch_size,*/ uint64_t r_ofm, uint64_t c_ofm,
-        uint64_t m_ofm, uint64_t n_ifm) {
+        cnndata_t* outC) {
 
   index_t i, j, k;
 
