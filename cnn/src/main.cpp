@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
 #else
     krnl_object cnn_obj;
     cnn_obj.index = 0;
-    cnn_obj.name = "strassen_32x32";
+    cnn_obj.name = "krnl_cnn_layerX";
 #endif
 
 #ifdef __VITIS_CL__

@@ -206,13 +206,13 @@ void print_params(uint64_t layer) {
             TR_X, TC_X, TM_X, TN_X);
 #endif
 }
-
+*/
 void initialize_buffer(cnndata_t *ptr, unsigned size, bool notzero) {
     for (unsigned i = 0; i < size; i++) {
         ptr[i] = notzero ? (rand() % VRANGE) : 0;
     }
 }
-
+/*
 void ZhangIsfpga15_1_fp(cnndata_t *input, cnndata_t *output, cnndata_t *weights,
         uint64_t iter, uint64_t layer) {
     uint64_t row, col, to, ti;
