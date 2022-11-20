@@ -82,6 +82,5 @@ typedef uint32_t index_t;
 extern "C"
 #endif
 void krnl_cnn_layerX(const cnndata_t* input, const cnndata_t* weights,
-        cnndata_t* output, uint64_t batch_size, uint64_t r_ofm, uint64_t c_ofm,
-        uint64_t m_ofm, uint64_t n_ifm);
+        cnndata_t* output);
 
