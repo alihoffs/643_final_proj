@@ -59,6 +59,9 @@
 
 #include "util643.h"
 
+void strassen_32x32(cnndata_t InA[32][32],
+                    cnndata_t InB[32][32],
+                    cnndata_t OutC[32][32]);
 void strassen_16x16(cnndata_t InA[16][16],
                     cnndata_t InB[16][16],
                     cnndata_t OutC[16][16]);
@@ -68,9 +71,12 @@ void strassen_8x8(cnndata_t InA[8][8],
 void strassen_4x4(cnndata_t InA[4][4],
                   cnndata_t InB[4][4],
                   cnndata_t OutC[4][4]);
-void strassen_2x2(cnndata_t InA[2][2],
-                  cnndata_t InB[2][2],
-                  cnndata_t OutC[2][2]);
+//void strassen_2x2(cnndata_t InA[2][2],
+//                  cnndata_t InB[2][2],
+//                  cnndata_t OutC[2][2]);
+void strassen_2x2(cnndata_t InA11, cnndata_t InA12, cnndata_t InA21, cnndata_t InA22,
+                    cnndata_t InB11, cnndata_t InB12, cnndata_t InB21, cnndata_t InB22,
+					cnndata_t OutC11, cnndata_t OutC12, cnndata_t OutC21, cnndata_t OutC22);
 
 #ifdef __VITIS_CL__
 extern "C" {
@@ -80,32 +86,130 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 
   index_t i, j, k;
 
-  cnndata_t inputs[14][16][16];
-  cnndata_t mults[7][16][16];
+  cnndata_t inputs[14][32][32];
+  cnndata_t mults[7][32][32];
+  cnndata_t elem_a, elem_b;
 
-// initialize inputs
-for (j = 0; j < 16; j++) {
-  for (k = 0; k < 16; k++) {
-      inputs[0][j][k] = ARRAYi_X(inA, j, k, 32, 32) + ARRAYi_X(inA, j+16, k+16, 32, 32); // A11+A22
-      inputs[1][j][k] = ARRAYi_X(inB, j, k, 32, 32) + ARRAYi_X(inB, j+16, k+16, 32, 32); // B11+B22
-      inputs[2][j][k] = ARRAYi_X(inA, j+16, k, 32, 32) + ARRAYi_X(inA, j+16, k+16, 32, 32); // A21+A22
-      inputs[3][j][k] = ARRAYi_X(inB, j, k, 32, 32); // B11
-      inputs[4][j][k] = ARRAYi_X(inA, j, k, 32, 32); // A11
-      inputs[5][j][k] = ARRAYi_X(inB, j, k+16, 32, 32) - ARRAYi_X(inB, j+16, k+16, 32, 32); // B12-B22
-      inputs[6][j][k] = ARRAYi_X(inA, j+16, k+16, 32, 32); // A22
-      inputs[7][j][k] = ARRAYi_X(inB, j+16, k, 32, 32) - ARRAYi_X(inB, j, k, 32, 32); // B21-B11
-      inputs[8][j][k] = ARRAYi_X(inA, j, k, 32, 32) +  ARRAYi_X(inA, j, k+16, 32, 32);// A11+A12
-      inputs[9][j][k] = ARRAYi_X(inB, j+16, k+16, 32, 32); // B22
-      inputs[10][j][k] = ARRAYi_X(inA, j+16, k, 32, 32) - ARRAYi_X(inA, j, k, 32, 32); // A21-A11
-      inputs[11][j][k] = ARRAYi_X(inB, j, k, 32, 32) + ARRAYi_X(inB, j+16, k+16, 32, 32); // B11+B12
-      inputs[12][j][k] = ARRAYi_X(inA, j, k+16, 32, 32) - ARRAYi_X(inA, j+16, k+16, 32, 32); // A12-A22
-      inputs[13][j][k] = ARRAYi_X(inB, j+16, k, 32, 32) + ARRAYi_X(inB, j+16, k+16, 32, 32); // B21+B22
+  // initialize inputs
+  // initialize A21
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+    	elem_a = ARRAYi_X(inA, j+32, k, 64, 64);
+    	elem_b = ARRAYi_X(inB, j+32, k, 64, 64);
+        inputs[2][j][k] = elem_a; // A21+A22
+        inputs[10][j][k] = elem_a; // A21-A11
+
+        inputs[7][j][k] = elem_b; // B21-B11
+        inputs[13][j][k] = elem_b; // B21+B22
+    }
   }
-}
 
-for (i = 0; i < 7; i++) {
-  strassen_16x16(inputs[2*i], inputs[2*i+1], mults[i]);
-}
+  // initialize A12
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+    	elem_a = ARRAYi_X(inA, j, k+32, 64, 64);
+    	elem_b = ARRAYi_X(inB, j, k+32, 64, 64);
+        inputs[8][j][k] = elem_a;// A11+A12
+        inputs[12][j][k] = elem_a; // A12-A22
+
+        inputs[5][j][k] = elem_b; // B12-B22
+        inputs[11][j][k] = elem_b; // B11+B12
+    }
+  }
+
+  // initialize A11
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+       	elem_a = ARRAYi_X(inA, j, k, 64, 64);
+		elem_b = ARRAYi_X(inB, j, k, 64, 64);
+        inputs[0][j][k] = elem_a; // A11+A22
+        inputs[4][j][k] = elem_a; // A11
+        inputs[8][j][k] +=  elem_a;// A11+A12
+        inputs[10][j][k] -= elem_a; // A21-A11
+
+        inputs[1][j][k] = elem_b; // B11+B22
+        inputs[3][j][k] = elem_b; // B11
+        inputs[7][j][k] -= elem_b; // B21-B11
+        inputs[11][j][k] += elem_b; // B11+B12
+    }
+  }
+
+  // initialize A22
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+       	elem_a = ARRAYi_X(inA, j+32, k+32, 64, 64);
+		elem_b = ARRAYi_X(inB, j+32, k+32, 64, 64);
+        inputs[0][j][k] += elem_a; // A11+A22
+        inputs[2][j][k] += elem_a; // A21+A22
+        inputs[6][j][k] = elem_a; // A22
+        inputs[12][j][k] -= elem_a; // A12-A22
+
+        inputs[1][j][k] += elem_b; // B11+B22
+        inputs[5][j][k] -= elem_b; // B12-B22
+        inputs[9][j][k] = elem_b; // B22
+        inputs[13][j][k] += elem_b; // B21+B22
+
+
+    }
+  }
+
+//  //initialize B21
+//  for (j = 0; j < 32; j++) {
+//    for (k = 0; k < 32; k++) {
+//        inputs[7][j][k] = ARRAYi_X(inB, j+32, k, 64, 64); // B21-B11
+//        inputs[13][j][k] = ARRAYi_X(inB, j+32, k, 64, 64); // B21+B22
+//    }
+//  }
+//
+//  // initialize B12
+//  for (j = 0; j < 32; j++) {
+//    for (k = 0; k < 32; k++) {
+//        inputs[5][j][k] = ARRAYi_X(inB, j, k+32, 64, 64); // B12-B22
+//        inputs[11][j][k] = ARRAYi_X(inB, j, k+32, 64, 64); // B11+B12
+//    }
+//  }
+//
+//  // initialize B11
+//  for (j = 0; j < 32; j++) {
+//    for (k = 0; k < 32; k++) {
+//        inputs[1][j][k] = ARRAYi_X(inB, j, k, 64, 64); // B11+B22
+//        inputs[3][j][k] = ARRAYi_X(inB, j, k, 64, 64); // B11
+//        inputs[7][j][k] -= ARRAYi_X(inB, j, k, 64, 64); // B21-B11
+//        inputs[11][j][k] += ARRAYi_X(inB, j, k, 64, 64); // B11+B12
+//    }
+//  }
+//
+//  // initialize B22
+//  for (j = 0; j < 32; j++) {
+//    for (k = 0; k < 32; k++) {
+//        inputs[1][j][k] += ARRAYi_X(inB, j+32, k+32, 64, 64); // B11+B22
+//        inputs[5][j][k] -= ARRAYi_X(inB, j+32, k+32, 64, 64); // B12-B22
+//        inputs[9][j][k] = ARRAYi_X(inB, j+32, k+32, 64, 64); // B22
+//        inputs[13][j][k] += ARRAYi_X(inB, j+32, k+32, 64, 64); // B21+B22
+//    }
+//  }
+  // for (j = 0; j < 16; j++) {
+  //   for (k = 0; k < 16; k++) {
+  //       inputs[0][j][k] = ARRAYi_X(inA, j, k, 64, 64) + ARRAYi_X(inA, j+32, k+32, 64, 64); // A11+A22
+  //       inputs[1][j][k] = ARRAYi_X(inB, j, k, 64, 64) + ARRAYi_X(inB, j+32, k+32, 64, 64); // B11+B22
+  //       inputs[2][j][k] = ARRAYi_X(inA, j+32, k, 64, 64) + ARRAYi_X(inA, j+32, k+32, 64, 64); // A21+A22
+  //       inputs[3][j][k] = ARRAYi_X(inB, j, k, 64, 64); // B11
+  //       inputs[4][j][k] = ARRAYi_X(inA, j, k, 64, 64); // A11
+  //       inputs[5][j][k] = ARRAYi_X(inB, j, k+32, 64, 64) - ARRAYi_X(inB, j+32, k+32, 64, 64); // B12-B22
+  //       inputs[6][j][k] = ARRAYi_X(inA, j+32, k+32, 64, 64); // A22
+  //       inputs[7][j][k] = ARRAYi_X(inB, j+32, k, 64, 64) - ARRAYi_X(inB, j, k, 64, 64); // B21-B11
+  //       inputs[8][j][k] = ARRAYi_X(inA, j, k, 64, 64) +  ARRAYi_X(inA, j, k+32, 64, 64);// A11+A12
+  //       inputs[9][j][k] = ARRAYi_X(inB, j+32, k+32, 64, 64); // B22
+  //       inputs[10][j][k] = ARRAYi_X(inA, j+32, k, 64, 64) - ARRAYi_X(inA, j, k, 64, 64); // A21-A11
+  //       inputs[11][j][k] = ARRAYi_X(inB, j, k, 64, 64) + ARRAYi_X(inB, j+32, k+32, 64, 64); // B11+B12
+  //       inputs[12][j][k] = ARRAYi_X(inA, j, k+32, 64, 64) - ARRAYi_X(inA, j+32, k+32, 64, 64); // A12-A22
+  //       inputs[13][j][k] = ARRAYi_X(inB, j+32, k, 64, 64) + ARRAYi_X(inB, j+32, k+32, 64, 64); // B21+B22
+  //   }
+  // }
+
+  for (i = 0; i < 7; i++) {
+    strassen_32x32(inputs[2*i], inputs[2*i+1], mults[i]);
+  }
 
 // create outputs
 /*
@@ -114,134 +218,151 @@ for (i = 0; i < 7; i++) {
     output[j+8][k] = mults[3][j][k] + mults[5][j][k];  // C21
     output[j+8][k+8] = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
 */
-for (j = 0; j < 16; j++) {
-  for (k = 0; k < 16; k++) {
-    ARRAYi_X(OutC, j, k, 32, 32) = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
-    ARRAYi_X(OutC, j, k+16, 32, 32) = mults[2][j][k] + mults[4][j][k];  // C12
-    ARRAYi_X(OutC, j+16, k, 32, 32) = mults[3][j][k] + mults[5][j][k];  // C21
-    ARRAYi_X(OutC, j+16, k+16, 32, 32) = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
-
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+      ARRAYi_X(OutC, j, k, 64, 64) = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+    }
   }
-}
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+      ARRAYi_X(OutC, j, k+32, 64, 64) = mults[2][j][k] + mults[4][j][k];  // C12
+    }
+  }
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+      ARRAYi_X(OutC, j+32, k, 64, 64) = mults[3][j][k] + mults[5][j][k];  // C21
+    }
+  }
+  for (j = 0; j < 32; j++) {
+    for (k = 0; k < 32; k++) {
+      ARRAYi_X(OutC, j+32, k+32, 64, 64) = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
+    }
+  }
 
-  // for(iter = 0; iter < batch_size; iter++) {      // Batch Loop
-  //   for(row = 0; row < r_ofm; row += TR_X) {      // Tiled Row Loop
-  //     for(col = 0; col < c_ofm; col += TC_X) {    // Tiled Column Loop
-  //       for(to = 0; to < m_ofm; to += TM_X) {     // Tiled Output Channel Loop
-  //         // Temporary versions of incremented indices;
-  //         // Same usage as in ZhangIsfpga_2()
-  //         index_t trr, tcc, too, tii;
-
-  //         // Only need to zero BufO in this loop ordering
-  //         {
-  //           // Indices internal to the block: count from 0
-  //           index_t ioo, icc, irr;
-
-  //           for(ioo = 0; ioo < TM_X; ioo++) {
-  //             for(irr = 0; irr < TR_X; irr++) {
-  //               for(icc = 0; icc < TC_X; icc++) {
-  //                 BufO[ioo][irr][icc] = 0;
-  //               }
-  //             }
-  //           }
-  //         }
-
-  //         // Tiled Input Channel Loop
-  //         for(ti = 0; ti < n_ifm; ti += TN_X) {
-  //           // Load active input feature map into local buffer
-  //           {
-  //             // Indices internal to the block: count from 0
-  //             index_t irr, icc, iii;
-
-  //             // Incremented temporary indices for input row and col
-  //             index_t xrr, xcc;
-
-  //             // Loop bounds
-  //             index_t tii_max, xrr_max, xcc_max;
-  //             tii_max = MIN(ti + TN_X, n_ifm);
-  //             xrr_max = MIN(row + TR_X, r_ofm) * S_WTS + K_WTS - S_WTS;
-  //             xcc_max = MIN(col + TC_X, c_ofm) * S_WTS + K_WTS - S_WTS;
-
-  //             for(tii = ti, iii = 0; tii < tii_max; tii++, iii++) {
-  //               for(xrr = row * S_WTS, irr = 0; xrr < xrr_max; xrr++, irr++) {
-  //                 for(xcc = col * S_WTS, icc = 0; xcc < xcc_max; xcc++, icc++) {
-  //                   BufI[iii][irr][icc] = ARRAYi_X(input, iter, tii, xrr, xcc,
-  //                     batch_size, n_ifm, r_ifm, c_ifm);
-  //                 }
-  //               }
-  //             }
-  //           }
-
-  //           // Load active weights into local buffer
-  //           {
-  //             // Indices internal to the block: count from 0
-  //             index_t ioo, iii, irr, icc;
-
-  //             // Loop bounds
-  //             index_t too_max, tii_max;
-  //             too_max = MIN(to + TM_X, m_ofm);
-  //             tii_max = MIN(ti + TN_X, n_ifm);
-
-  //             for(too = to, ioo = 0; too < too_max; too++, ioo++) {
-  //               for(tii = ti, iii = 0; tii < tii_max; tii++, iii++) {
-  //                 for(irr = 0; irr < K_WTS; irr++) {
-  //                   for(icc = 0; icc < K_WTS; icc++) {
-  //                     BufW[ioo][iii][irr][icc] = ARRAYw_X(weights, too, tii,
-  //                       irr, icc, m_ofm, n_ifm, K_WTS, K_WTS);
-  //                   }
-  //                 }
-  //               }
-
-  //               /* Write 0s into over-run regions at the end;
-  //                * This way convolve_kernel() accumulates correctly
-  //                * without needing a special case
-  //                */
-  //               if (iii < TN_X) {
-  //                 for(; iii < TN_X; iii++) {
-  //                   for(irr = 0; irr < K_WTS; irr++) {
-  //                     for(icc = 0; icc < K_WTS; icc++) {
-  //                       BufW[ioo][iii][irr][icc] = 0;
-  //                     }
-  //                   }
-  //                 }
-  //               }
-  //             }
-  //           }
-
-  //           // Call the blocked cnn kernel
-  //           cnn_blocked_kernel(BufI, BufO, BufW);
-  //         }
-
-  //         // Unload finished active intermedaite output feature map from local
-  //         // to full buffer
-  //         {
-  //           // Indices internal to the block: count from 0
-  //           index_t ioo, icc, irr;
-
-  //           // Loop bounds
-  //           index_t too_max, tcc_max, trr_max;
-  //           too_max = MIN(to + TM_X, m_ofm);
-  //           tcc_max = MIN(col + TC_X, c_ofm);
-  //           trr_max = MIN(row + TR_X, r_ofm);
-
-  //           for(too = to, ioo = 0; too < too_max; too++, ioo++) {
-  //             for(trr = row, irr = 0; trr < trr_max; trr++, irr++) {
-  //               for(tcc = col, icc = 0; tcc < tcc_max; tcc++, icc++) {
-  //                 ARRAYo_X(output, iter, too, trr, tcc, batch_size, m_ofm,
-  //                   r_ofm, c_ofm) = BufO[ioo][irr][icc];
-  //               }
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
 }
 
 #ifdef __VITIS_CL__ // for lab 3
 } // extern
 #endif
+void strassen_32x32(cnndata_t InA[32][32],
+                    cnndata_t InB[32][32],
+                    cnndata_t OutC[32][32]) {
+
+  index_t i, j, k;
+
+  cnndata_t inputs[14][16][16];
+  cnndata_t mults[7][16][16];
+
+// initialize inputs
+// // initialize A21
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[2][j][k] = InA[j+8][k]; // A21+A22
+//         inputs[10][j][k] = InA[j+8][k]; // A21-A11
+//     }
+//   }
+
+//   // initialize A12
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[8][j][k] = InA[j][k+8];// A11+A12
+//         inputs[12][j][k] = InA[j][k+8]; // A12-A22
+//     }
+//   }
+
+//   // initialize A11
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[0][j][k] = InA[j][k]; // A11+A22
+//         inputs[4][j][k] = InA[j][k]; // A11
+//         inputs[8][j][k] +=  InA[j][k]; // A11+A12
+//         inputs[10][j][k] -= InA[j][k]; // A21-A11
+
+//     }
+//   }
+
+//   // initialize A22
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[0][j][k] += InA[j+8][k+8]; // A11+A22
+//         inputs[2][j][k] += InA[j+8][k+8]; // A21+A22
+//         inputs[6][j][k] = InA[j+8][k+8]; // A22
+//         inputs[12][j][k] -= InA[j+8][k+8]; // A12-A22
+//     }
+//   }
+
+//   //initialize B21
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[7][j][k] = InB[j+8][k]; // B21-B11
+//         inputs[13][j][k] = InB[j+8][k]; // B21+B22
+//     }
+//   }
+
+//   // initialize B12
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[5][j][k] = InB[j][k+8]; // B12-B22
+//         inputs[11][j][k] = InB[j][k+8]; // B11+B12
+//     }
+//   }
+
+//   // initialize B11
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[1][j][k] = InB[j][k]; // B11+B22
+//         inputs[3][j][k] = InB[j][k]; // B11
+//         inputs[7][j][k] -= InB[j][k];// B21-B11
+//         inputs[11][j][k] += InB[j][k]; // B11+B12
+//     }
+//   }
+
+//   // initialize B22
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[1][j][k] += InB[j+8][k+8]; // B11+B22
+//         inputs[5][j][k] -= InB[j+8][k+8]; // B12-B22
+//         inputs[9][j][k] = InB[j+8][k+8]; // B22
+//         inputs[13][j][k] += InB[j+8][k+8]; // B21+B22
+//     }
+//   }
+for (j = 0; j < 16; j++) {
+  for (k = 0; k < 16; k++) {
+#pragma HLS UNROLL factor=8
+      inputs[0][j][k] = InA[j][k] + InA[j+16][k+16]; // A11+A22
+      inputs[1][j][k] = InB[j][k] + InB[j+16][k+16]; // B11+B22
+      inputs[2][j][k] = InA[j+16][k] + InA[j+16][k+16]; // A21+A22
+      inputs[3][j][k] = InB[j][k]; // B11
+      inputs[4][j][k] = InA[j][k]; // A11
+      inputs[5][j][k] = InB[j][k+16] - InB[j+16][k+16]; // B12-B22
+      inputs[6][j][k] = InA[j+16][k+16]; // A22
+      inputs[7][j][k] = InB[j+16][k] - InB[j][k]; // B21-B11
+      inputs[8][j][k] = InA[j][k] + InA[j][k+16]; // A11+A12
+      inputs[9][j][k] = InB[j+16][k+16]; // B22
+      inputs[10][j][k] = InA[j+16][k] - InA[j][k]; // A21-A11
+      inputs[11][j][k] = InB[j][k] + InB[j][k+16]; // B11+B12
+      inputs[12][j][k] = InA[j][k+16] - InA[j+16][k+16]; // A12-A22
+      inputs[13][j][k] = InB[j+16][k] + InB[j+16][k+16]; // B21+B22
+  }
+}
+
+for (i = 0; i < 7; i++) {
+  strassen_16x16(inputs[2*i], inputs[2*i+1], mults[i]);
+}
+
+// create outputs
+  for (j = 0; j < 16; j++) {
+    for (k = 0; k < 16; k++) {
+#pragma HLS UNROLL factor=8
+        OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+        OutC[j][k+16] = mults[2][j][k] + mults[4][j][k];  // C12
+        OutC[j+16][k] = mults[3][j][k] + mults[5][j][k];  // C21
+        OutC[j+16][k+16] = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
+
+    }
+  }
+}
+
 
 void strassen_16x16(cnndata_t InA[16][16],
                     cnndata_t InB[16][16],
@@ -253,8 +374,81 @@ void strassen_16x16(cnndata_t InA[16][16],
   cnndata_t mults[7][8][8];
 
 // initialize inputs
+// // initialize A21
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[2][j][k] = InA[j+8][k]; // A21+A22
+//         inputs[10][j][k] = InA[j+8][k]; // A21-A11
+//     }
+//   }
+
+//   // initialize A12
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[8][j][k] = InA[j][k+8];// A11+A12
+//         inputs[12][j][k] = InA[j][k+8]; // A12-A22
+//     }
+//   }
+
+//   // initialize A11
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[0][j][k] = InA[j][k]; // A11+A22
+//         inputs[4][j][k] = InA[j][k]; // A11
+//         inputs[8][j][k] +=  InA[j][k]; // A11+A12
+//         inputs[10][j][k] -= InA[j][k]; // A21-A11
+
+//     }
+//   }
+
+//   // initialize A22
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[0][j][k] += InA[j+8][k+8]; // A11+A22
+//         inputs[2][j][k] += InA[j+8][k+8]; // A21+A22
+//         inputs[6][j][k] = InA[j+8][k+8]; // A22
+//         inputs[12][j][k] -= InA[j+8][k+8]; // A12-A22
+//     }
+//   }
+
+//   //initialize B21
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[7][j][k] = InB[j+8][k]; // B21-B11
+//         inputs[13][j][k] = InB[j+8][k]; // B21+B22
+//     }
+//   }
+
+//   // initialize B12
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[5][j][k] = InB[j][k+8]; // B12-B22
+//         inputs[11][j][k] = InB[j][k+8]; // B11+B12
+//     }
+//   }
+
+//   // initialize B11
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[1][j][k] = InB[j][k]; // B11+B22
+//         inputs[3][j][k] = InB[j][k]; // B11
+//         inputs[7][j][k] -= InB[j][k];// B21-B11
+//         inputs[11][j][k] += InB[j][k]; // B11+B12
+//     }
+//   }
+
+//   // initialize B22
+//   for (j = 0; j < 8; j++) {
+//     for (k = 0; k < 8; k++) {
+//         inputs[1][j][k] += InB[j+8][k+8]; // B11+B22
+//         inputs[5][j][k] -= InB[j+8][k+8]; // B12-B22
+//         inputs[9][j][k] = InB[j+8][k+8]; // B22
+//         inputs[13][j][k] += InB[j+8][k+8]; // B21+B22
+//     }
+//   }
 for (j = 0; j < 8; j++) {
   for (k = 0; k < 8; k++) {
+#pragma HLS UNROLL factor=4
       inputs[0][j][k] = InA[j][k] + InA[j+8][k+8]; // A11+A22
       inputs[1][j][k] = InB[j][k] + InB[j+8][k+8]; // B11+B22
       inputs[2][j][k] = InA[j+8][k] + InA[j+8][k+8]; // A21+A22
@@ -279,6 +473,7 @@ for (i = 0; i < 7; i++) {
 // create outputs
   for (j = 0; j < 8; j++) {
     for (k = 0; k < 8; k++) {
+#pragma HLS UNROLL factor=4
         OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
         OutC[j][k+8] = mults[2][j][k] + mults[4][j][k];  // C12
         OutC[j+8][k] = mults[3][j][k] + mults[5][j][k];  // C21
@@ -295,42 +490,123 @@ void strassen_8x8(cnndata_t InA[8][8],
   index_t i, j, k;
 
   cnndata_t inputs[14][4][4];
+#pragma HLS BIND_STORAGE variable=inputs type=ram_2p
+
   cnndata_t mults[7][4][4];
+#pragma HLS BIND_STORAGE variable=mults type=ram_2p
+
+
 
 // initialize inputs
-for (j = 0; j < 4; j++) {
-  for (k = 0; k < 4; k++) {
-      inputs[0][j][k] = InA[j][k] + InA[j+4][k+4]; // A11+A22
-      inputs[1][j][k] = InB[j][k] + InB[j+4][k+4]; // B11+B22
-      inputs[2][j][k] = InA[j+4][k] + InA[j+4][k+4]; // A21+A22
-      inputs[3][j][k] = InB[j][k]; // B11
-      inputs[4][j][k] = InA[j][k]; // A11
-      inputs[5][j][k] = InB[j][k+4] - InB[j+4][k+4]; // B12-B22
-      inputs[6][j][k] = InA[j+4][k+4]; // A22
-      inputs[7][j][k] = InB[j+4][k] - InB[j][k]; // B21-B11
-      inputs[8][j][k] = InA[j][k] + InA[j][k+4]; // A11+A12
-      inputs[9][j][k] = InB[j+4][k+4]; // B22
-      inputs[10][j][k] = InA[j+4][k] - InA[j][k]; // A21-A11
-      inputs[11][j][k] = InB[j][k] + InB[j][k+4]; // B11+B12
-      inputs[12][j][k] = InA[j][k+4] - InA[j+4][k+4]; // A12-A22
-      inputs[13][j][k] = InB[j+4][k] + InB[j+4][k+4]; // B21+B22
-  }
-}
+// // initialize A21
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[2][j][k] = InA[j+4][k]; // A21+A22
+//         inputs[10][j][k] = InA[j+4][k]; // A21-A11
+//     }
+//   }
 
-for (i = 0; i < 7; i++) {
-  strassen_4x4(inputs[2*i], inputs[2*i+1], mults[i]);
-}
+//   // initialize A12
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[8][j][k] = InA[j][k+4];// A11+A12
+//         inputs[12][j][k] = InA[j][k+4]; // A12-A22
+//     }
+//   }
 
-// create outputs
-  for (j = 0; j < 4; j++) {
-    for (k = 0; k < 4; k++) {
-        OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
-        OutC[j][k+4] = mults[2][j][k] + mults[4][j][k];  // C12
-        OutC[j+4][k] = mults[3][j][k] + mults[5][j][k];  // C21
-        OutC[j+4][k+4] = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
+//   // initialize A11
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[0][j][k] = InA[j][k]; // A11+A22
+//         inputs[4][j][k] = InA[j][k]; // A11
+//         inputs[8][j][k] +=  InA[j][k]; // A11+A12
+//         inputs[10][j][k] -= InA[j][k]; // A21-A11
 
-    }
-  }
+//     }
+//   }
+
+//   // initialize A22
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[0][j][k] += InA[j+4][k+4]; // A11+A22
+//         inputs[2][j][k] += InA[j+4][k+4]; // A21+A22
+//         inputs[6][j][k] = InA[j+4][k+4]; // A22
+//         inputs[12][j][k] -= InA[j+4][k+4]; // A12-A22
+//     }
+//   }
+
+//   //initialize B21
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[7][j][k] = InB[j+4][k]; // B21-B11
+//         inputs[13][j][k] = InB[j+4][k]; // B21+B22
+//     }
+//   }
+
+//   // initialize B12
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[5][j][k] = InB[j][k+4]; // B12-B22
+//         inputs[11][j][k] = InB[j][k+4]; // B11+B12
+//     }
+//   }
+
+//   // initialize B11
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[1][j][k] = InB[j][k]; // B11+B22
+//         inputs[3][j][k] = InB[j][k]; // B11
+//         inputs[7][j][k] -= InB[j][k];// B21-B11
+//         inputs[11][j][k] += InB[j][k]; // B11+B12
+//     }
+//   }
+
+//   // initialize B22
+//   for (j = 0; j < 4; j++) {
+//     for (k = 0; k < 4; k++) {
+//         inputs[1][j][k] += InB[j+4][k+4]; // B11+B22
+//         inputs[5][j][k] -= InB[j+4][k+4]; // B12-B22
+//         inputs[9][j][k] = InB[j+4][k+4]; // B22
+//         inputs[13][j][k] += InB[j+4][k+4]; // B21+B22
+//     }
+//   }
+	for (j = 0; j < 4; j++) {
+
+	  for (k = 0; k < 4; k++) {
+#pragma HLS UNROLL factor=2
+		  inputs[0][j][k] = InA[j][k] + InA[j+4][k+4]; // A11+A22
+		  inputs[1][j][k] = InB[j][k] + InB[j+4][k+4]; // B11+B22
+		  inputs[2][j][k] = InA[j+4][k] + InA[j+4][k+4]; // A21+A22
+		  inputs[3][j][k] = InB[j][k]; // B11
+		  inputs[4][j][k] = InA[j][k]; // A11
+		  inputs[5][j][k] = InB[j][k+4] - InB[j+4][k+4]; // B12-B22
+		  inputs[6][j][k] = InA[j+4][k+4]; // A22
+		  inputs[7][j][k] = InB[j+4][k] - InB[j][k]; // B21-B11
+		  inputs[8][j][k] = InA[j][k] + InA[j][k+4]; // A11+A12
+		  inputs[9][j][k] = InB[j+4][k+4]; // B22
+		  inputs[10][j][k] = InA[j+4][k] - InA[j][k]; // A21-A11
+		  inputs[11][j][k] = InB[j][k] + InB[j][k+4]; // B11+B12
+		  inputs[12][j][k] = InA[j][k+4] - InA[j+4][k+4]; // A12-A22
+		  inputs[13][j][k] = InB[j+4][k] + InB[j+4][k+4]; // B21+B22
+	  }
+	}
+
+	strassen_8x8_solve:for (i = 0; i < 7; i++) {
+	  strassen_4x4(inputs[2*i], inputs[2*i+1], mults[i]);
+	}
+
+	// create outputs
+	  for (j = 0; j < 4; j++) {
+
+		for (k = 0; k < 4; k++) {
+#pragma HLS UNROLL factor=2
+			OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+			OutC[j][k+4] = mults[2][j][k] + mults[4][j][k];  // C12
+			OutC[j+4][k] = mults[3][j][k] + mults[5][j][k];  // C21
+			OutC[j+4][k+4] = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
+
+		}
+	  }
 }
 
 void strassen_4x4(cnndata_t InA[4][4],
@@ -340,73 +616,158 @@ void strassen_4x4(cnndata_t InA[4][4],
   index_t i, j, k;
 
   cnndata_t inputs[14][2][2];
+  #pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=lutram
   cnndata_t mults[7][2][2];
+  #pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=lutram
+
 
 // initialize inputs
-for (j = 0; j < 2; j++) {
-  for (k = 0; k < 2; k++) {
-      inputs[0][j][k] = InA[j][k] + InA[j+2][k+2]; // A11+A22
-      inputs[1][j][k] = InB[j][k] + InB[j+2][k+2]; // B11+B22
-      inputs[2][j][k] = InA[j+2][k] + InA[j+2][k+2]; // A21+A22
-      inputs[3][j][k] = InB[j][k]; // B11
-      inputs[4][j][k] = InA[j][k]; // A11
-      inputs[5][j][k] = InB[j][k+2] - InB[j+2][k+2]; // B12-B22
-      inputs[6][j][k] = InA[j+2][k+2]; // A22
-      inputs[7][j][k] = InB[j+2][k] - InB[j][k]; // B21-B11
-      inputs[8][j][k] = InA[j][k] + InA[j][k+2]; // A11+A12
-      inputs[9][j][k] = InB[j+2][k+2]; // B22
-      inputs[10][j][k] = InA[j+2][k] - InA[j][k]; // A21-A11
-      inputs[11][j][k] = InB[j][k] + InB[j][k+2]; // B11+B12
-      inputs[12][j][k] = InA[j][k+2] - InA[j+2][k+2]; // A12-A22
-      inputs[13][j][k] = InB[j+2][k] + InB[j+2][k+2]; // B21+B22
-  }
+// // initialize A21
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[2][j][k] = InA[j+2][k]; // A21+A22
+//         inputs[10][j][k] = InA[j+2][k]; // A21-A11
+//     }
+//   }
+
+//   // initialize A12
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[8][j][k] = InA[j][k+2];// A11+A12
+//         inputs[12][j][k] = InA[j][k+2]; // A12-A22
+//     }
+//   }
+
+//   // initialize A11
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[0][j][k] = InA[j][k]; // A11+A22
+//         inputs[4][j][k] = InA[j][k]; // A11
+//         inputs[8][j][k] +=  InA[j][k]; // A11+A12
+//         inputs[10][j][k] -= InA[j][k]; // A21-A11
+
+//     }
+//   }
+
+//   // initialize A22
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[0][j][k] += InA[j+2][k+2]; // A11+A22
+//         inputs[2][j][k] += InA[j+2][k+2]; // A21+A22
+//         inputs[6][j][k] = InA[j+2][k+2]; // A22
+//         inputs[12][j][k] -= InA[j+2][k+2]; // A12-A22
+//     }
+//   }
+
+//   //initialize B21
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[7][j][k] = InB[j+2][k]; // B21-B11
+//         inputs[13][j][k] = InB[j+2][k]; // B21+B22
+//     }
+//   }
+
+//   // initialize B12
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[5][j][k] = InB[j][k+2]; // B12-B22
+//         inputs[11][j][k] = InB[j][k+2]; // B11+B12
+//     }
+//   }
+
+//   // initialize B11
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[1][j][k] = InB[j][k]; // B11+B22
+//         inputs[3][j][k] = InB[j][k]; // B11
+//         inputs[7][j][k] -= InB[j][k];// B21-B11
+//         inputs[11][j][k] += InB[j][k]; // B11+B12
+//     }
+//   }
+
+//   // initialize B22
+//   for (j = 0; j < 2; j++) {
+//     for (k = 0; k < 2; k++) {
+//         inputs[1][j][k] += InB[j+2][k+2]; // B11+B22
+//         inputs[5][j][k] -= InB[j+2][k+2]; // B12-B22
+//         inputs[9][j][k] = InB[j+2][k+2]; // B22
+//         inputs[13][j][k] += InB[j+2][k+2]; // B21+B22
+//     }
+//   }
+	for (j = 0; j < 2; j++) {
+
+	  for (k = 0; k < 2; k++) {
+#pragma HLS UNROLL
+		  inputs[0][j][k] = InA[j][k] + InA[j+2][k+2]; // A11+A22
+		  inputs[1][j][k] = InB[j][k] + InB[j+2][k+2]; // B11+B22
+		  inputs[2][j][k] = InA[j+2][k] + InA[j+2][k+2]; // A21+A22
+		  inputs[3][j][k] = InB[j][k]; // B11
+		  inputs[4][j][k] = InA[j][k]; // A11
+		  inputs[5][j][k] = InB[j][k+2] - InB[j+2][k+2]; // B12-B22
+		  inputs[6][j][k] = InA[j+2][k+2]; // A22
+		  inputs[7][j][k] = InB[j+2][k] - InB[j][k]; // B21-B11
+		  inputs[8][j][k] = InA[j][k] + InA[j][k+2]; // A11+A12
+		  inputs[9][j][k] = InB[j+2][k+2]; // B22
+		  inputs[10][j][k] = InA[j+2][k] - InA[j][k]; // A21-A11
+		  inputs[11][j][k] = InB[j][k] + InB[j][k+2]; // B11+B12
+		  inputs[12][j][k] = InA[j][k+2] - InA[j+2][k+2]; // A12-A22
+		  inputs[13][j][k] = InB[j+2][k] + InB[j+2][k+2]; // B21+B22
+	  }
+	}
+
+	strassen_4x4_solve: for (i = 0; i < 7; i++) {
+#pragma HLS UNROLL
+
+	  strassen_2x2(inputs[2*i][0][0], inputs[2*i][0][1], inputs[2*i][1][0], inputs[2*i][1][1],
+			  	   inputs[2*i+1][0][0], inputs[2*i+1][0][1], inputs[2*i+1][1][0], inputs[2*i+1][1][1],
+				  mults[i][0][0], mults[i][0][1], mults[i][1][0], mults[i][1][1]);
+	}
+
+	// create outputs
+	  for (j = 0; j < 2; j++) {
+		for (k = 0; k < 2; k++) {
+#pragma HLS UNROLL
+			OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+			OutC[j][k+2] = mults[2][j][k] + mults[4][j][k];  // C12
+			OutC[j+2][k] = mults[3][j][k] + mults[5][j][k];  // C21
+			OutC[j+2][k+2] = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
+
+		}
+	  }
 }
 
-for (i = 0; i < 7; i++) {
-  strassen_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
-}
-
-// create outputs
-  for (j = 0; j < 2; j++) {
-    for (k = 0; k < 2; k++) {
-        OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
-        OutC[j][k+2] = mults[2][j][k] + mults[4][j][k];  // C12
-        OutC[j+2][k] = mults[3][j][k] + mults[5][j][k];  // C21
-        OutC[j+2][k+2] = mults[1][j][k] + mults[3][j][k] - mults[2][j][k] + mults[5][j][k];  // C22
-
-    }
-  }
-}
-
-void strassen_2x2(cnndata_t InA[2][2],
-                    cnndata_t InB[2][2],
-                    cnndata_t OutC[2][2]) {
+void strassen_2x2(cnndata_t InA11, cnndata_t InA12, cnndata_t InA21, cnndata_t InA22,
+                    cnndata_t InB11, cnndata_t InB12, cnndata_t InB21, cnndata_t InB22,
+					cnndata_t OutC11, cnndata_t OutC12, cnndata_t OutC21, cnndata_t OutC22) {
 
   index_t i, j, k;
   cnndata_t inputs[14];
+#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=lutram
   cnndata_t mults[7];
-      inputs[0]= InA[0][0] + InA[1][1]; // A11+A22
-      inputs[1]= InB[0][0] + InB[1][1]; // B11+B22
-      inputs[2]= InA[1][0] + InA[1][1]; // A21+A22
-      inputs[3]= InB[0][0]; // B11
-      inputs[4]= InA[0][0]; // A11
-      inputs[5]= InB[0][1] - InB[1][1]; // B12-B22
-      inputs[6]= InA[1][1]; // A22
-      inputs[7]= InB[1][0] - InB[0][0]; // B21-B11
-      inputs[8]= InA[0][0] + InA[0][1]; // A11+A12
-      inputs[9]= InB[1][1]; // B22
-      inputs[10] = InA[1][0] - InA[0][0]; // A21-A11
-      inputs[11] = InB[0][0] + InB[0][1]; // B11+B12
-      inputs[12] = InA[0][1] - InA[1][1]; // A12-A22
-      inputs[13] = InB[1][0] + InB[1][1]; // B21+B22
+#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=lutram
+      inputs[0]= InA11 + InA22; // A11+A22
+      inputs[1]= InB11 + InB22; // B11+B22
+      inputs[2]= InA21 + InA22; // A21+A22
+      inputs[3]= InB11; // B11
+      inputs[4]= InA11; // A11
+      inputs[5]= InB12 - InB22; // B12-B22
+      inputs[6]= InA22; // A22
+      inputs[7]= InB21 - InB11; // B21-B11
+      inputs[8]= InA11 + InA12; // A11+A12
+      inputs[9]= InB22; // B22
+      inputs[10] = InA21 - InA11; // A21-A11
+      inputs[11] = InB11 + InB12; // B11+B12
+      inputs[12] = InA12 - InA22; // A12-A22
+      inputs[13] = InB21 + InB22; // B21+B22
   
 // create outputs
-      for (i = 0; i < 7; i++) {
+      strassen_2x2_solve:for (i = 0; i < 7; i++) {
+#pragma HLS UNROLL
         mults[i] = inputs[2*i]*inputs[2*i+1];
       }
 
-        OutC[0][0] = mults[0] + mults[3] - mults[4] + mults[6];  // C11
-        OutC[0][1] = mults[2] + mults[4];  // C12
-        OutC[1][0] = mults[3] + mults[5];  // C21
-        OutC[1][1] = mults[1] + mults[3] - mults[2] + mults[5];  // C22
+        OutC11 = mults[0] + mults[3] - mults[4] + mults[6];  // C11
+        OutC12 = mults[2] + mults[4];  // C12
+        OutC21 = mults[3] + mults[5];  // C21
+        OutC22 = mults[1] + mults[3] - mults[2] + mults[5];  // C22
 }
