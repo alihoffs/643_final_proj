@@ -252,7 +252,9 @@ void strassen_64x64(cnndata_t InA[64][64],
   index_t i, j, k;
 
   cnndata_t inputs[14][32][32];
+#pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=complete variable=inputs
   cnndata_t mults[7][32][32];
+#pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=complete variable=mults
 
 // initialize inputs
 // // initialize A21
@@ -329,7 +331,6 @@ void strassen_64x64(cnndata_t InA[64][64],
 //   }
 for (j = 0; j < 32; j++) {
   for (k = 0; k < 32; k++) {
-#pragma HLS UNROLL factor=8
       inputs[0][j][k] = InA[j][k] + InA[j+32][k+32]; // A11+A22
       inputs[1][j][k] = InB[j][k] + InB[j+32][k+32]; // B11+B22
       inputs[2][j][k] = InA[j+32][k] + InA[j+32][k+32]; // A21+A22
@@ -354,7 +355,6 @@ for (i = 0; i < 7; i++) {
 // create outputs
   for (j = 0; j < 32; j++) {
     for (k = 0; k < 32; k++) {
-#pragma HLS UNROLL factor=8
         OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
         OutC[j][k+32] = mults[2][j][k] + mults[4][j][k];  // C12
         OutC[j+32][k] = mults[3][j][k] + mults[5][j][k];  // C21
@@ -449,7 +449,7 @@ void strassen_32x32(cnndata_t InA[32][32],
 //   }
 for (j = 0; j < 16; j++) {
   for (k = 0; k < 16; k++) {
-#pragma HLS UNROLL factor=4
+#pragma HLS UNROLL factor=2
       inputs[0][j][k] = InA[j][k] + InA[j+16][k+16]; // A11+A22
       inputs[1][j][k] = InB[j][k] + InB[j+16][k+16]; // B11+B22
       inputs[2][j][k] = InA[j+16][k] + InA[j+16][k+16]; // A21+A22
@@ -468,13 +468,14 @@ for (j = 0; j < 16; j++) {
 }
 
 for (i = 0; i < 7; i++) {
+#pragma HLS UNROLL factor=2
   strassen_16x16(inputs[2*i], inputs[2*i+1], mults[i]);
 }
 
 // create outputs
   for (j = 0; j < 16; j++) {
     for (k = 0; k < 16; k++) {
-#pragma HLS UNROLL factor=4
+#pragma HLS UNROLL factor=2
         OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
         OutC[j][k+16] = mults[2][j][k] + mults[4][j][k];  // C12
         OutC[j+16][k] = mults[3][j][k] + mults[5][j][k];  // C21
@@ -492,9 +493,9 @@ void strassen_16x16(cnndata_t InA[16][16],
   index_t i, j, k;
 
   cnndata_t inputs[14][8][8];
-#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=auto
+#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=lutram
   cnndata_t mults[7][8][8];
-#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=auto
+#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=lutram
 
 // initialize inputs
 // // initialize A21
@@ -614,10 +615,10 @@ void strassen_8x8(cnndata_t InA[8][8],
   index_t i, j, k;
 
   cnndata_t inputs[14][4][4];
-#pragma HLS BIND_STORAGE variable=inputs type=ram_2p
+#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=lutram
 
   cnndata_t mults[7][4][4];
-#pragma HLS BIND_STORAGE variable=mults type=ram_2p
+#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=lutram
 
 
 
@@ -716,6 +717,7 @@ void strassen_8x8(cnndata_t InA[8][8],
 	}
 
 	strassen_8x8_solve:for (i = 0; i < 7; i++) {
+#pragma HLS UNROLL
 	  strassen_4x4(inputs[2*i], inputs[2*i+1], mults[i]);
 	}
 
