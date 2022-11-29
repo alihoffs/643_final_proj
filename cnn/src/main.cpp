@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
 #endif
 
     // Random initialize output for kernel use
-    initialize_buffer(ptr_output, num_elem_outputs, true); // cannot assume 0'ed
+    initialize_buffer(ptr_output, num_elem_outputs, false); // cannot assume 0'ed
     // initialize_buffer(ptr_output[1], num_elem_outputs[1], true); // cannot assume 0'ed
 
     std::cout << "\n===== Execution and Timing starts ======" << std::endl;
