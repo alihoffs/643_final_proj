@@ -173,7 +173,7 @@ void print_params(uint64_t layer) {
 */
 void initialize_buffer(cnndata_t *ptr, unsigned size, bool notzero) {
     for (unsigned i = 0; i < size; i++) {
-        ptr[i] = notzero ? (rand() % VRANGE) : 0;
+        ptr[i] = notzero ? 0 : 0;//(rand() % VRANGE) : 0;
     }
 }
 /*
