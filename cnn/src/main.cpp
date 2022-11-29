@@ -167,8 +167,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Execution and Timing finished!\n" << std::endl;
 
     std::cout << "===== Verification starts ======" << std::endl;
-    // mismatch[0] = cnn_check(ptr_inA, ptr_inB, ptr_output,
-    //         ref_inA, ref_inB, ref_output, 0);
+    mismatch[0] = cnn_check(ptr_inA, ptr_inB, ptr_output,
+             ref_inA, ref_inB, ref_output, 0);
     std::cout << "CNN layer 0 TEST " << (mismatch[0] ? "FAILED" : "PASSED") << "\n" << std::endl;
     // mismatch[1] = cnn_check(ptr_output[0], ptr_weight[1], ptr_output[1],
     //         ref_output[0], ref_weight[1], ref_output[1], 1);

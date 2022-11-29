@@ -138,55 +138,59 @@ static const std::string cnn_error_message =
         "i = %d CPU result = %d Device result = %d\n";
 
 // Verify a single batch of data
-/*
-bool verify(cnndata_t *ref, cnndata_t *checkit, uint64_t iter, uint64_t layer) {
+
+bool verify(cnndata_t *ref, cnndata_t *checkit) {
     uint64_t row, col, to;
 
-    for(to = 0; to < M_OFM(layer); to++) {
-        for(row = 0; row < R_OFM(layer); row++) {
-            for(col = 0; col < C_OFM(layer) ; col++) {
-                cnndata_t refval = ARRAY4(ref, iter, to, row, col,
-                        BATCH_SIZE, M_OFM(layer), R_OFM(layer), C_OFM(layer));
-#ifdef ENABLE_DFX
-                cnndata_t checkval = (layer ?
-                    ARRAYo_1(checkit, iter, to, row, col, BATCH_SIZE,
-                        M_OFM(layer), R_OFM(layer), C_OFM(layer)) :
-                    ARRAYo_0(checkit, iter, to, row, col, BATCH_SIZE,
-                        M_OFM(layer), R_OFM(layer), C_OFM(layer)));
-#else
-                cnndata_t checkval = ARRAYo_X(checkit, iter, to, row, col,
-                    BATCH_SIZE, M_OFM(layer), R_OFM(layer), C_OFM(layer));
-#endif
-                if (!nearlyEqual(checkval, refval)) {
-                    printf("\n***Result does not match reference: layer = %lu, "
-                            "row = %lu, col = %lu***\n", to, row, col);
-                    return 0;
-                }
+
+    for(row = 0; row < 128; row++) {
+        for(col = 0; col < 128 ; col++) {
+            cnndata_t refval = ARRAY2(ref,row,col,128,128);
+
+            cnndata_t checkval = ARRAY2(checkit,row,col,128,128) ;
+
+            if (!nearlyEqual(checkval, refval)) {
+                printf("\n***Result does not match reference:  "
+                        "row = %lu, col = %lu***\n", row, col);
+                return 0;
             }
         }
     }
+    
     return 1;
 }
 
-bool cnn_check(cnndata_t *ptr_input, cnndata_t *ptr_weight, cnndata_t *ptr_output,
-        cnndata_t *ref_input, cnndata_t *ref_weight, cnndata_t *ref_output,
+
+bool cnn_check(cnndata_t *ptr_inA, cnndata_t *ptr_inB, cnndata_t *ptr_output,
+        cnndata_t *ref_inA, cnndata_t *ref_inB, cnndata_t *ref_output,
         uint64_t layer) {
-    std::cout << "Verifying cnn result..." << std::endl;
+    std::cout << "Verifying matrix multiply result..." << std::endl;
 
-    //Verify the result
-    uint64_t mismatch = 0;
-    uint64_t iter;
+    uint64_t row, col, k;
 
-    for(iter = 0; iter < BATCH_SIZE; iter++) {
-        ZhangIsfpga15_1_fp(ref_input, ref_output, ref_weight, iter, layer);
-        if (!verify(ref_output, ptr_output, iter, layer)) {
-            mismatch = 1;
-            break;
+    // initialize ref_output to 0 for easy multiply accumulate
+    for (row = 0; row < 128; row++) {
+        for (col = 0; col < 128; col++) {
+            ref_output[row*128+col] = 0;
         }
     }
+
+    // compute the correct result
+    for (row = 0; row < 128; row++) {
+        for (col = 0; col < 128; col++) {
+            for (k = 0; k < 128; k++) {
+                ref_output[row*128 + col] += ref_inA[row*128 + k]*ref_inB[k*128 + col];
+            }
+        }
+    }
+
+    if (!verify(ref_output, ptr_output)){
+        mismatch = 1;
+    }
+
     return mismatch;
 }
-
+/*
 void print_params(uint64_t layer) {
     std::cout << "===== Printing the CNN parameters Layer "
               << layer << " ======" << std::endl;
