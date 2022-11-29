@@ -90,7 +90,7 @@ static const std::string cnn_error_message =
 // Verify a single batch of data
 
 bool verify(cnndata_t *ref, cnndata_t *checkit) {
-    uint64_t row, col, to;
+    uint64_t row, col;
 
 
     for(row = 0; row < 128; row++) {
@@ -101,7 +101,7 @@ bool verify(cnndata_t *ref, cnndata_t *checkit) {
 
             if (!nearlyEqual(checkval, refval)) {
                 printf("\n***Result does not match reference:  "
-                        "row = %lu, col = %lu***\n", row, col);
+                        "row = %lu, col = %lu, refval = %lu, checkval = %lu***\n", row, col, refval, checkval);
                 return 0;
             }
         }
