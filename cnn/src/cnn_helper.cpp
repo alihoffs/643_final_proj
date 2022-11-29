@@ -114,10 +114,20 @@ bool verify(cnndata_t *ref, cnndata_t *checkit) {
 bool cnn_check(cnndata_t *ptr_inA, cnndata_t *ptr_inB, cnndata_t *ptr_output,
         cnndata_t *ref_inA, cnndata_t *ref_inB, cnndata_t *ref_output,
         uint64_t layer) {
-    std::cout << "Verifying matrix multiply result..." << std::endl;
+
 
     uint64_t row, col, k;
     bool mismatch;
+
+    std::cout << "Verifying inputs are the same..." << std::endl;
+    if (!verify(ref_inA, ptr_inA)){
+    	std::cout << "inA does not match..." << std::endl;
+    }
+
+    if (!verify(ref_inB, ptr_inB)){
+    	std::cout << "inB does not match..." << std::endl;
+    }
+    std::cout << "Verifying matrix multiply result..." << std::endl;
     // initialize ref_output to 0 for easy multiply accumulate
     for (row = 0; row < 128; row++) {
         for (col = 0; col < 128; col++) {
