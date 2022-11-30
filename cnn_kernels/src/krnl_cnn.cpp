@@ -509,7 +509,7 @@ void strassen_8x8(cnndata_t InA[8][8],
 #pragma HLS UNROLL
 			OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
 			OutC[j][k+4] = mults[2][j][k] + mults[4][j][k];  // C12
-			OutC[j+4][k] = mults[3][j][k] + mults[5][j][k];  // C21
+			OutC[j+4][k] = mults[1][j][k] + mults[3][j][k];  // C21
 			OutC[j+4][k+4] = mults[0][j][k] - mults[1][j][k] + mults[2][j][k] + mults[5][j][k];  // C22
 		}
   }
