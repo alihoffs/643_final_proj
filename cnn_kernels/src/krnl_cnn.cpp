@@ -75,9 +75,9 @@ void strassen_4x4(cnndata_t InA[4][4],
                   cnndata_t InB[4][4],
                   cnndata_t OutC[4][4]);
 
-void strassen_2x2(cnndata_t InA11, cnndata_t InA12, cnndata_t InA21, cnndata_t InA22,
-                    cnndata_t InB11, cnndata_t InB12, cnndata_t InB21, cnndata_t InB22,
-					cnndata_t OutC11, cnndata_t OutC12, cnndata_t OutC21, cnndata_t OutC22);
+void strassen_2x2(cnndata_t InA[2][2],
+				  cnndata_t InB[2][2],
+				  cnndata_t OutC[2][2]);
 
 #ifdef __VITIS_CL__
 extern "C" {
@@ -548,10 +548,7 @@ void strassen_4x4(cnndata_t InA[4][4],
 
 	strassen_4x4_solve: for (i = 0; i < 7; i++) {
 #pragma HLS UNROLL
-
-	  strassen_2x2(inputs[2*i][0][0], inputs[2*i][0][1], inputs[2*i][1][0], inputs[2*i][1][1],
-			  	   inputs[2*i+1][0][0], inputs[2*i+1][0][1], inputs[2*i+1][1][0], inputs[2*i+1][1][1],
-				  mults[i][0][0], mults[i][0][1], mults[i][1][0], mults[i][1][1]);
+	  strassen_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
 	}
 
 	// create outputs
@@ -567,38 +564,36 @@ void strassen_4x4(cnndata_t InA[4][4],
   }
 }
 
-void strassen_2x2(cnndata_t InA11, cnndata_t InA12, cnndata_t InA21, cnndata_t InA22,
-                    cnndata_t InB11, cnndata_t InB12, cnndata_t InB21, cnndata_t InB22,
-					cnndata_t OutC11, cnndata_t OutC12, cnndata_t OutC21, cnndata_t OutC22) {
+void strassen_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]) {
 
   index_t i, j, k;
   cnndata_t inputs[14];
 #pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=lutram
   cnndata_t mults[7];
 #pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=lutram
-      inputs[0]= InA11 + InA22; // A11+A22
-      inputs[1]= InB11 + InB22; // B11+B22
-      inputs[2]= InA21 + InA22; // A21+A22
-      inputs[3]= InB11; // B11
-      inputs[4]= InA11; // A11
-      inputs[5]= InB12 - InB22; // B12-B22
-      inputs[6]= InA22; // A22
-      inputs[7]= InB21 - InB11; // B21-B11
-      inputs[8]= InA11 + InA12; // A11+A12
-      inputs[9]= InB22; // B22
-      inputs[10] = InA21 - InA11; // A21-A11
-      inputs[11] = InB11 + InB12; // B11+B12
-      inputs[12] = InA12 - InA22; // A12-A22
-      inputs[13] = InB21 + InB22; // B21+B22
+      inputs[0]= InA[0][0] + InA[1][1]; // A11+A22
+      inputs[1]= InB[0][0] + InB[1][1]; // B11+B22
+      inputs[2]= InA[1][0] + InA[1][1]; // A21+A22
+      inputs[3]= InB[0][0]; // B11
+      inputs[4]= InA[0][0]; // A11
+      inputs[5]= InB[0][1] - InB[1][1]; // B12-B22
+      inputs[6]= InA[1][1]; // A22
+      inputs[7]= InB[1][0] - InB[0][0]; // B21-B11
+      inputs[8]= InA[0][0] + InA[0][1]; // A11+A12
+      inputs[9]= InB[1][1]; // B22
+      inputs[10] = InA[1][0] - InA[0][0]; // A21-A11
+      inputs[11] = InB[0][0] + InB[0][1]; // B11+B12
+      inputs[12] = InA[0][1] - InA[1][1]; // A12-A22
+      inputs[13] = InB[1][0] + InB[1][1]; // B21+B22
   
 // create outputs
       strassen_2x2_solve:for (i = 0; i < 7; i++) {
 #pragma HLS UNROLL
-        mults[i] = inputs[i+i]*inputs[i+i+1];
+        mults[i] = inputs[2*i]*inputs[2*i+1];
       }
 
-        OutC11 = mults[0] + mults[3] - mults[4] + mults[6];  // C11
-        OutC12 = mults[2] + mults[4];  // C12
-        OutC21 = mults[1] + mults[3];  // C21
-        OutC22 = mults[0] - mults[1] + mults[2] + mults[5];  // C22
+        OutC[0][0] = mults[0] + mults[3] - mults[4] + mults[6];  // C11
+        OutC[0][1] = mults[2] + mults[4];  // C12
+        OutC[1][0] = mults[1] + mults[3];  // C21
+        OutC[1][1] = mults[0] - mults[1] + mults[2] + mults[5];  // C22
 }

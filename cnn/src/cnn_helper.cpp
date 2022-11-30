@@ -103,6 +103,8 @@ bool verify(cnndata_t *ref, cnndata_t *checkit) {
                 printf("\n***Result does not match reference:  "
                         "row = %lu, col = %lu, refval = %lu, checkval = %lu***\n", row, col, refval, checkval);
                 return 0;
+            } else {
+            	printf("\n it do match: %lu\n", checkval);
             }
         }
     }
@@ -173,7 +175,7 @@ void print_params(uint64_t layer) {
 */
 void initialize_buffer(cnndata_t *ptr, unsigned size, bool notzero) {
     for (unsigned i = 0; i < size; i++) {
-        ptr[i] = notzero ? 0 : 0;//(rand() % VRANGE) : 0;
+        ptr[i] = notzero ? (rand() % VRANGE) : 0;
     }
 }
 /*
