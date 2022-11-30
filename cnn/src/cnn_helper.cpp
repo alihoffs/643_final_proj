@@ -103,8 +103,6 @@ bool verify(cnndata_t *ref, cnndata_t *checkit) {
                 printf("\n***Result does not match reference:  "
                         "row = %lu, col = %lu, refval = %lu, checkval = %lu***\n", row, col, refval, checkval);
                 return 0;
-            } else {
-            	printf("\n it do match: %lu\n", checkval);
             }
         }
     }
