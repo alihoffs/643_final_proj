@@ -78,6 +78,17 @@ typedef uint32_t index_t;
 // You should not need to edit below this point for Lab 3
 /////////////////////////////////////////////////////////////
 
+//#define NON_RECURSIVE_2
+//#define NON_RECURSIVE_4
+//#define NON_RECURSIVE_8
+//#define NON_RECURSIVE_16
+//#define NON_RECURSIVE_32
+//#define NON_RECURSIVE_64
+
+//#define NON_RECURSIVE_128
+//#define NON_RECURSIVE_512
+
+
 #ifdef __VITIS_CL__
 extern "C"
 #endif
