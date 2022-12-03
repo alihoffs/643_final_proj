@@ -35,11 +35,7 @@
                             							
                             <tool id="com.xilinx.ide.accel.tool.hwLinker.586147892" name="V++ Kernel Linker" superClass="com.xilinx.ide.accel.tool.hwLinker">
                                 								
-                                <option id="com.xilinx.accelerated.toolchain.hw_linker.other_flags.1648759306" name="Other flags" superClass="com.xilinx.accelerated.toolchain.hw_linker.other_flags" useByScannerDiscovery="false" valueType="stringList">
-                                    									
-                                    <listOptionValue builtIn="false" value="--config /afs/ece.cmu.edu/class/ece643/f2022/lab3/krnl_reconnect.cfg"/>
-                                    								
-                                </option>
+                                <option id="com.xilinx.accelerated.toolchain.hw_linker.other_flags.1648759306" name="Other flags" superClass="com.xilinx.accelerated.toolchain.hw_linker.other_flags" useByScannerDiscovery="false" valueType="stringList"/>
                                 							
                             </tool>
                             						

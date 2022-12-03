@@ -84,6 +84,7 @@ extern "C" {
 #endif
 void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
         cnndata_t* OutC) {
+#pragma HLS INLINE recursive
 
   index_t i, j, k, j_offset, k_offset;
 
@@ -223,7 +224,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 */
   top_C11_0:for (j = 0; j < 64; j++) {
     top_C11_1:for (k = 0; k < 64; k++) {
-#pragma HLS PIPELINE
+
       ARRAYi_X(OutC, j, k, 128, 128) = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
     }
   }
@@ -251,7 +252,6 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 void strassen_64x64(cnndata_t InA[64][64],
                     cnndata_t InB[64][64],
                     cnndata_t OutC[64][64]) {
-#pragma HLS INLINE recursive
 
   index_t i, j, k;
 
@@ -405,6 +405,7 @@ strassen_32x32_solve:for (i = 0; i < 7; i++) {
 // create outputs
 strassen_32x32_out_0:for (j = 0; j < 16; j++) {
   strassen_32x32_out_1:for (k = 0; k < 16; k++) {
+#pragma HLS PIPELINE
         OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
         OutC[j][k+16] = mults[2][j][k] + mults[4][j][k];  // C12
         OutC[j+16][k] = mults[1][j][k] + mults[3][j][k];  // C21
@@ -428,6 +429,7 @@ void strassen_16x16(cnndata_t InA[16][16],
 
 strassen_16x16_in_0:for (j = 0; j < 8; j++) {
   strassen_16x16_in_1:for (k = 0; k < 8; k++) {
+#pragma HLS PIPELINE
       inputs[0][j][k] = InA[j][k] + InA[j+8][k+8]; // A11+A22
       inputs[1][j][k] = InB[j][k] + InB[j+8][k+8]; // B11+B22
       inputs[2][j][k] = InA[j+8][k] + InA[j+8][k+8]; // A21+A22
@@ -452,6 +454,7 @@ strassen_16x16_solve:for (i = 0; i < 7; i++) {
 // create outputs
   strassen_16x16_out_0:for (j = 0; j < 8; j++) {
     strassen_16x16_out_1:for (k = 0; k < 8; k++) {
+#pragma HLS PIPELINE
         OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
         OutC[j][k+8] = mults[2][j][k] + mults[4][j][k];  // C12
         OutC[j+8][k] = mults[1][j][k] + mults[3][j][k];  // C21
@@ -475,6 +478,7 @@ void strassen_8x8(cnndata_t InA[8][8],
 
 	strassen_8x8_in_0:for (j = 0; j < 4; j++) {
 	  strassen_8x8_in_1:for (k = 0; k < 4; k++) {
+#pragma HLS PIPELINE
 		  inputs[0][j][k] = InA[j][k] + InA[j+4][k+4]; // A11+A22
 		  inputs[1][j][k] = InB[j][k] + InB[j+4][k+4]; // B11+B22
 		  inputs[2][j][k] = InA[j+4][k] + InA[j+4][k+4]; // A21+A22
@@ -493,12 +497,14 @@ void strassen_8x8(cnndata_t InA[8][8],
 	}
 
 	strassen_8x8_solve:for (i = 0; i < 7; i++) {
+#pragma HLS PIPELINE
 	  strassen_4x4(inputs[2*i], inputs[2*i+1], mults[i]);
 	}
 
 	// create outputs
   strassen_8x8_out_0:for (j = 0; j < 4; j++) {
 		strassen_8x8_out_1:for (k = 0; k < 4; k++) {
+#pragma HLS PIPELINE
 			OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
 			OutC[j][k+4] = mults[2][j][k] + mults[4][j][k];  // C12
 			OutC[j+4][k] = mults[1][j][k] + mults[3][j][k];  // C21
@@ -522,6 +528,7 @@ void strassen_4x4(cnndata_t InA[4][4],
 
 	strassen_4x4_in_0:for (j = 0; j < 2; j++) {
 	  strassen_4x4_in_1:for (k = 0; k < 2; k++) {
+#pragma HLS PIPELINE
 		  inputs[0][j][k] = InA[j][k] + InA[j+2][k+2]; // A11+A22
 		  inputs[1][j][k] = InB[j][k] + InB[j+2][k+2]; // B11+B22
 		  inputs[2][j][k] = InA[j+2][k] + InA[j+2][k+2]; // A21+A22
@@ -540,12 +547,14 @@ void strassen_4x4(cnndata_t InA[4][4],
 	}
 
 	strassen_4x4_solve: for (i = 0; i < 7; i++) {
+#pragma HLS PIPELINE
 	  strassen_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
 	}
 
 	// create outputs
   strassen_4x4_out_0:for (j = 0; j < 2; j++) {
    strassen_4x4_out_1:for (k = 0; k < 2; k++) {
+#pragma HLS PIPELINE
 			OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
 			OutC[j][k+2] = mults[2][j][k] + mults[4][j][k];  // C12
 			OutC[j+2][k] = mults[1][j][k] + mults[3][j][k];  // C21
@@ -576,9 +585,10 @@ void strassen_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]
       inputs[11] = InB[0][0] + InB[0][1]; // B11+B12
       inputs[12] = InA[0][1] - InA[1][1]; // A12-A22
       inputs[13] = InB[1][0] + InB[1][1]; // B21+B22
-  
+
 // create outputs
       strassen_2x2_solve:for (i = 0; i < 7; i++) {
+#pragma HLS PIPELINE
         mults[i] = inputs[2*i]*inputs[2*i+1];
       }
 
