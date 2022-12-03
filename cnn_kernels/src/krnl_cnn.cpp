@@ -47,6 +47,8 @@
  ****************************************************************/
 
 #include "krnl_cnn.h"
+#include <iostream>
+#include <string>
 
 // Prevent aliasing
 #undef BATCH_SIZE
@@ -59,6 +61,7 @@
 
 #include "util643.h"
 
+// create function headers for strassen recursion
 void strassen_64x64(cnndata_t InA[64][64],
                     cnndata_t InB[64][64],
                     cnndata_t OutC[64][64]);
@@ -74,8 +77,34 @@ void strassen_8x8(cnndata_t InA[8][8],
 void strassen_4x4(cnndata_t InA[4][4],
                   cnndata_t InB[4][4],
                   cnndata_t OutC[4][4]);
-
 void strassen_2x2(cnndata_t InA[2][2],
+				  cnndata_t InB[2][2],
+				  cnndata_t OutC[2][2]);
+
+// create function headers for non-recursive mmm's
+
+void mmm_512x512(cnndata_t InA[512][512],
+                    cnndata_t InB[512][512],
+                    cnndata_t OutC[512][512]);
+void mmm_128x128(cnndata_t InA[128][128],
+                    cnndata_t InB[128][128],
+                    cnndata_t OutC[128][128]);
+void mmm_64x64(cnndata_t InA[64][64],
+                    cnndata_t InB[64][64],
+                    cnndata_t OutC[64][64]);
+void mmm_32x32(cnndata_t InA[32][32],
+                    cnndata_t InB[32][32],
+                    cnndata_t OutC[32][32]);
+void mmm_16x16(cnndata_t InA[16][16],
+                    cnndata_t InB[16][16],
+                    cnndata_t OutC[16][16]);
+void mmm_8x8(cnndata_t InA[8][8],
+                  cnndata_t InB[8][8],
+                  cnndata_t OutC[8][8]);
+void mmm_4x4(cnndata_t InA[4][4],
+                  cnndata_t InB[4][4],
+                  cnndata_t OutC[4][4]);
+void mmm_2x2(cnndata_t InA[2][2],
 				  cnndata_t InB[2][2],
 				  cnndata_t OutC[2][2]);
 
@@ -154,60 +183,9 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
     }
   }
 
-//  //initialize B21
-//  for (j = 0; j < 64; j++) {
-//    for (k = 0; k < 64; k++) {
-//        inputs[7][j][k] = ARRAYi_X(inB, j+64, k, 128, 128); // B21-B11
-//        inputs[13][j][k] = ARRAYi_X(inB, j+64, k, 128, 128); // B21+B22
-//    }
-//  }
-//
-//  // initialize B12
-//  for (j = 0; j < 64; j++) {
-//    for (k = 0; k < 64; k++) {
-//        inputs[5][j][k] = ARRAYi_X(inB, j, k+128, 128, 64); // B12-B22
-//        inputs[11][j][k] = ARRAYi_X(inB, j, k+128, 128, 64); // B11+B12
-//    }
-//  }
-//
-//  // initialize B11
-//  for (j = 0; j < 64; j++) {
-//    for (k = 0; k < 64; k++) {
-//        inputs[1][j][k] = ARRAYi_X(inB, j, k, 128, 128); // B11+B22
-//        inputs[3][j][k] = ARRAYi_X(inB, j, k, 128, 128); // B11
-//        inputs[7][j][k] -= ARRAYi_X(inB, j, k, 128, 128); // B21-B11
-//        inputs[11][j][k] += ARRAYi_X(inB, j, k, 128, 128); // B11+B12
-//    }
-//  }
-//
-//  // initialize B22
-//  for (j = 0; j < 64; j++) {
-//    for (k = 0; k < 64; k++) {
-//        inputs[1][j][k] += ARRAYi_X(inB, j+64, k+128, 128, 64); // B11+B22
-//        inputs[5][j][k] -= ARRAYi_X(inB, j+64, k+128, 128, 64); // B12-B22
-//        inputs[9][j][k] = ARRAYi_X(inB, j+64, k+128, 128, 64); // B22
-//        inputs[13][j][k] += ARRAYi_X(inB, j+64, k+128, 128, 64); // B21+B22
-//    }
-//  }
-  // for (j = 0; j < 16; j++) {
-  //   for (k = 0; k < 16; k++) {
-  //       inputs[0][j][k] = ARRAYi_X(inA, j, k, 128, 128) + ARRAYi_X(inA, j+64, k+128, 128, 64); // A11+A22
-  //       inputs[1][j][k] = ARRAYi_X(inB, j, k, 128, 128) + ARRAYi_X(inB, j+64, k+128, 128, 64); // B11+B22
-  //       inputs[2][j][k] = ARRAYi_X(inA, j+64, k, 128, 128) + ARRAYi_X(inA, j+64, k+128, 128, 64); // A21+A22
-  //       inputs[3][j][k] = ARRAYi_X(inB, j, k, 128, 128); // B11
-  //       inputs[4][j][k] = ARRAYi_X(inA, j, k, 128, 128); // A11
-  //       inputs[5][j][k] = ARRAYi_X(inB, j, k+128, 128, 64) - ARRAYi_X(inB, j+64, k+128, 128, 64); // B12-B22
-  //       inputs[6][j][k] = ARRAYi_X(inA, j+64, k+128, 128, 64); // A22
-  //       inputs[7][j][k] = ARRAYi_X(inB, j+64, k, 128, 128) - ARRAYi_X(inB, j, k, 128, 128); // B21-B11
-  //       inputs[8][j][k] = ARRAYi_X(inA, j, k, 128, 128) +  ARRAYi_X(inA, j, k+128, 128, 64);// A11+A12
-  //       inputs[9][j][k] = ARRAYi_X(inB, j+64, k+128, 128, 64); // B22
-  //       inputs[10][j][k] = ARRAYi_X(inA, j+64, k, 128, 128) - ARRAYi_X(inA, j, k, 128, 128); // A21-A11
-  //       inputs[11][j][k] = ARRAYi_X(inB, j, k, 128, 128) + ARRAYi_X(inB, j+64, k+128, 128, 64); // B11+B12
-  //       inputs[12][j][k] = ARRAYi_X(inA, j, k+128, 128, 64) - ARRAYi_X(inA, j+64, k+128, 128, 64); // A12-A22
-  //       inputs[13][j][k] = ARRAYi_X(inB, j+64, k, 128, 128) + ARRAYi_X(inB, j+64, k+128, 128, 64); // B21+B22
-  //   }
-  // }
 
+
+<<<<<<< HEAD
 //  for (i = 0; i < 7; i++) {
 //    strassen_64x64(inputs[2*i], inputs[2*i+1], mults[i]);
 //  }
@@ -223,6 +201,23 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   // Calc M3 and M5
   for (i = 2; i < 5; i += 2) {
 	  strassen_64x64(inputs[2*i], inputs[2*i+1], mults[i]);
+=======
+  strassen_top_solve:for (i = 0; i < 7; i++) {
+    #ifdef NON_RECURSIVE_64
+      mmm_64x64(inputs[2*i], inputs[2*i+1], mults[i]);
+    #else
+      strassen_64x64(inputs[2*i], inputs[2*i+1], mults[i]);
+    #endif
+  }
+
+// create outputs
+
+  top_C11_0:for (j = 0; j < 64; j++) {
+    top_C11_1:for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
+      ARRAYi_X(OutC, j, k, 128, 128) = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+    }
+>>>>>>> 3e09f821add3a2cd0023222e12fdda58c9e23412
   }
   for (j = 0; j < 64; j++) {
     for (k = 0, k_offset=64; k < 64; k++,k_offset++) {
@@ -266,6 +261,8 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 #ifdef __VITIS_CL__ // for lab 3
 } // extern
 #endif
+
+// define strassen/recursive mmm's
 void strassen_64x64(cnndata_t InA[64][64],
                     cnndata_t InB[64][64],
                     cnndata_t OutC[64][64]) {
@@ -278,6 +275,7 @@ void strassen_64x64(cnndata_t InA[64][64],
   cnndata_t mults[7][32][32];
 #pragma HLS BIND_STORAGE variable=mults type=ram_2p
 
+<<<<<<< HEAD
 // initialize inputs
 // // initialize A21
 //   for (j = 0; j < 8; j++) {
@@ -354,6 +352,11 @@ void strassen_64x64(cnndata_t InA[64][64],
 for (j = 0; j < 32; j++) {
   for (k = 0; k < 32; k++) {
 //#pragma HLS UNROLL
+=======
+
+  strassen_64x64_in_0:for (j = 0; j < 32; j++) {
+    strassen_64x64_in_1:for (k = 0; k < 32; k++) {
+>>>>>>> 3e09f821add3a2cd0023222e12fdda58c9e23412
       inputs[0][j][k] = InA[j][k] + InA[j+32][k+32]; // A11+A22
       inputs[1][j][k] = InB[j][k] + InB[j+32][k+32]; // B11+B22
       inputs[2][j][k] = InA[j+32][k] + InA[j+32][k+32]; // A21+A22
@@ -371,6 +374,7 @@ for (j = 0; j < 32; j++) {
   }
 }
 
+<<<<<<< HEAD
 //for (i = 0; i < 7; i++) {
 //#pragma HLS UNROLL factor=2
 //  strassen_32x32(inputs[2*i], inputs[2*i+1], mults[i]);
@@ -427,6 +431,15 @@ for (j = 0; j < 32; j++) {
 		OutC[j+32][k+32] = mults[0][j][k] - mults[1][j][k] + mults[2][j][k] + mults[5][j][k];  // C22
 	  }
 	}
+=======
+strassen_64x64_solve:for (i = 0; i < 7; i++) {
+    #ifdef NON_RECURSIVE_32
+      mmm_32x32(inputs[2*i], inputs[2*i+1], mults[i]);
+    #else
+      strassen_32x32(inputs[2*i], inputs[2*i+1], mults[i]);
+    #endif
+}
+>>>>>>> 3e09f821add3a2cd0023222e12fdda58c9e23412
 
 }
 
@@ -462,7 +475,11 @@ void strassen_32x32(cnndata_t InA[32][32],
 }
 
 strassen_32x32_solve:for (i = 0; i < 7; i++) {
-  strassen_16x16(inputs[2*i], inputs[2*i+1], mults[i]);
+    #ifdef NON_RECURSIVE_16
+      mmm_16x16(inputs[2*i], inputs[2*i+1], mults[i]);
+    #else
+	    strassen_16x16(inputs[2*i], inputs[2*i+1], mults[i]);
+    #endif
 }
 
 // create outputs
@@ -551,9 +568,19 @@ for (j = 0; j < 8; j++) {
   }
 }
 
+<<<<<<< HEAD
 for (i = 0; i < 7; i++) {
 //#pragma HLS UNROLL
   strassen_8x8(inputs[2*i], inputs[2*i+1], mults[i]);
+=======
+strassen_16x16_solve:for (i = 0; i < 7; i++) {
+    #ifdef NON_RECURSIVE_8
+      mmm_8x8(inputs[2*i], inputs[2*i+1], mults[i]);
+    #else
+	    strassen_8x8(inputs[2*i], inputs[2*i+1], mults[i]);
+    #endif
+  
+>>>>>>> 3e09f821add3a2cd0023222e12fdda58c9e23412
 }
 
 // create outputs
@@ -602,8 +629,16 @@ void strassen_8x8(cnndata_t InA[8][8],
 	}
 
 	strassen_8x8_solve:for (i = 0; i < 7; i++) {
+<<<<<<< HEAD
 //#pragma HLS UNROLL
 	  strassen_4x4(inputs[2*i], inputs[2*i+1], mults[i]);
+=======
+    #ifdef NON_RECURSIVE_4
+      mmm_4x4(inputs[2*i], inputs[2*i+1], mults[i]);
+    #else
+	    strassen_4x4(inputs[2*i], inputs[2*i+1], mults[i]);
+    #endif
+>>>>>>> 3e09f821add3a2cd0023222e12fdda58c9e23412
 	}
 
 	// create outputs
@@ -650,8 +685,17 @@ void strassen_4x4(cnndata_t InA[4][4],
 	}
 
 	strassen_4x4_solve: for (i = 0; i < 7; i++) {
+<<<<<<< HEAD
 //#pragma HLS UNROLL
 	  strassen_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
+=======
+    #ifdef NON_RECURSIVE_2
+      mmm_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
+    #else
+	    strassen_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
+    #endif
+
+>>>>>>> 3e09f821add3a2cd0023222e12fdda58c9e23412
 	}
 
 	// create outputs
@@ -699,4 +743,125 @@ void strassen_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]
         OutC[0][1] = mults[2] + mults[4];  // C12
         OutC[1][0] = mults[1] + mults[3];  // C21
         OutC[1][1] = mults[0] - mults[1] + mults[2] + mults[5];  // C22
+}
+
+void mmm_512x512(cnndata_t InA[512][512], cnndata_t InB[512][512], cnndata_t OutC[512][512]) {
+  std::cout << "--- non-recursive mmm_512x512 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_512x512_0:for (i = 0; i < 512; i++) {
+    mmm_512x512_1:for (j = 0; j < 512; j++) {
+      output = 0;
+      mmm_512x512_2:for (k = 0; k < 512; k++){
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+void mmm_128x128(cnndata_t InA[128][128], cnndata_t InB[128][128], cnndata_t OutC[128][128]) {
+  std::cout << "--- non-recursive mmm_128x128 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_128x128_0:for (i = 0; i < 128; i++) {
+    mmm_128x128_1:for (j = 0; j < 128; j++) {
+      output = 0;
+      mmm_128x128_2:for (k = 0; k < 128; k++){
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+void mmm_64x64(cnndata_t InA[64][64], cnndata_t InB[64][64], cnndata_t OutC[64][64]) {
+  std::cout << "--- non-recursive mmm_64x64 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_64x64_0:for (i = 0; i < 64; i++) {
+    mmm_64x64_1:for (j = 0; j < 64; j++) {
+      output = 0;
+      mmm_64x64_2:for (k = 0; k < 64; k++){
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+void mmm_32x32(cnndata_t InA[32][32], cnndata_t InB[32][32], cnndata_t OutC[32][32]) {
+  std::cout << "--- non-recursive mmm_32x32 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_32x32_0:for (i = 0; i < 32; i++) {
+    mmm_32x32_1:for (j = 0; j < 32; j++) {
+      output = 0;
+      mmm_32x32_2:for (k = 0; k < 32; k++) {
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+void mmm_16x16(cnndata_t InA[16][16], cnndata_t InB[16][16], cnndata_t OutC[16][16]) {
+  std::cout << "--- non-recursive mmm_16x16 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_16x16_0:for (i = 0; i < 16; i++) {
+    mmm_16x16_1:for (j = 0; j < 16; j++) {
+      output = 0;
+      mmm_16x16_2:for (k = 0; k < 16; k++) {
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+void mmm_8x8(cnndata_t InA[8][8], cnndata_t InB[8][8], cnndata_t OutC[8][8]) {
+  std::cout << "--- non-recursive mmm_8x8 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_8x8_0:for (i = 0; i < 8; i++) {
+    mmm_8x8_1:for (j = 0; j < 8; j++) {
+      output = 0;
+      mmm_8x8_2:for (k = 0; k < 8; k++) {
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+
+void mmm_4x4(cnndata_t InA[4][4], cnndata_t InB[4][4], cnndata_t OutC[4][4]) {
+  std::cout << "--- non-recursive mmm_4x4 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_4x4_0:for (i = 0; i < 4; i++) {
+    mmm_4x4_1:for (j = 0; j < 4; j++) {
+      output = 0;
+      mmm_4x4_2:for (k = 0; k < 4; k++) {
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+void mmm_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]) {
+  std::cout << "--- non-recursive mmm_2x2 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_2x2_0:for (i = 0; i < 2; i++) {
+    mmm_2x2_1:for (j = 0; j < 2; j++) {
+      output = 0;
+      mmm_2x2_2:for (k = 0; k < 2; k++) {
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
 }
