@@ -84,6 +84,7 @@ extern "C" {
 #endif
 void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
         cnndata_t* OutC) {
+#pragma HLS TOP name=krnl_cnn_layerX
 #pragma HLS INLINE recursive
 
   index_t i, j, k, j_offset, k_offset;
@@ -547,7 +548,7 @@ void strassen_4x4(cnndata_t InA[4][4],
 	}
 
 	strassen_4x4_solve: for (i = 0; i < 7; i++) {
-#pragma HLS PIPELINE
+#pragma HLS UNROLL
 	  strassen_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
 	}
 
@@ -588,7 +589,7 @@ void strassen_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]
 
 // create outputs
       strassen_2x2_solve:for (i = 0; i < 7; i++) {
-#pragma HLS PIPELINE
+#pragma HLS UNROLL
         mults[i] = inputs[2*i]*inputs[2*i+1];
       }
 
