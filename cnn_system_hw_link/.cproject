@@ -35,7 +35,7 @@
                             							
                             <tool id="com.xilinx.ide.accel.tool.hwLinker.586147892" name="V++ Kernel Linker" superClass="com.xilinx.ide.accel.tool.hwLinker">
                                 								
-                                <option id="com.xilinx.accelerated.toolchain.hw_linker.other_flags.1648759306" name="Other flags" superClass="com.xilinx.accelerated.toolchain.hw_linker.other_flags" useByScannerDiscovery="false" valueType="stringList"/>
+                                <option id="com.xilinx.accelerated.toolchain.hw_linker.other_flags.1648759306" name="Other flags" superClass="com.xilinx.accelerated.toolchain.hw_linker.other_flags" useByScannerDiscovery="false"/>
                                 							
                             </tool>
                             						
