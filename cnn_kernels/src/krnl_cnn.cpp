@@ -118,8 +118,10 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   index_t i, j, k, j_offset, k_offset;
 
   cnndata_t inputs[8][64][64];
+#pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=block variable=inputs
 #pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=bram
   cnndata_t mults[4][64][64];
+#pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=block variable=mults
 #pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=bram
   cnndata_t elem_a, elem_b;
 
@@ -246,6 +248,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   }
   top_C11_out_0:for (j = 0; j < 64; j++) {
     top_C11_out_1:for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
       // M1 + M4 - M5 + M7
       ARRAYi_X(OutC, j, k, 128, 128) = mults[0][j][k] + mults[1][j][k] - mults[2][j][k] + mults[3][j][k];  // C11
     }
@@ -282,6 +285,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 
   top_C12_out_0:for (j = 0; j < 64; j++) {
     top_C12_out_1:for (k = 0, k_offset=64; k < 64; k++,k_offset++) {
+#pragma HLS PIPELINE
       // M3 + M5
       ARRAYi_X(OutC, j, k_offset, 128, 128) = mults[2][j][k] + mults[3][j][k];  // C12
     }
@@ -294,6 +298,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   //X11
  for (j = 0; j < 64; j++) {
     for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
        	elem_b = ARRAYi_X(inB, j, k, 128, 128);
         inputs[5][j][k] = elem_b; // B11
     }
@@ -301,6 +306,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   //X21
   for (j = 0, j_offset = 64; j < 64; j++, j_offset++) {
     for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
     	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
         inputs[4][j][k] = elem_a; // A21+A22
     }
@@ -309,6 +315,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   //X22
   for (j = 0, j_offset=64; j < 64; j++, j_offset++) {
     for (k = 0, k_offset=64; k < 64; k++, k_offset++) {
+#pragma HLS PIPELINE
        	elem_a = ARRAYi_X(inA, j_offset, k_offset, 128, 128);
         inputs[4][j][k] += elem_a; // A21+A22
     }
@@ -318,6 +325,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
  
   top_C21_out_0:for (j = 0, j_offset=64; j < 64; j++,j_offset++) {
     top_C21_out_1:for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
       // M2 + M4
       ARRAYi_X(OutC, j_offset, k, 128, 128) = mults[1][j][k] + mults[2][j][k];  // C21
     }
@@ -329,6 +337,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   //X21
   for (j = 0, j_offset = 64; j < 64; j++, j_offset++) {
     for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
     	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
       inputs[2][j][k] = elem_a; // A21-A11
     }
@@ -336,6 +345,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   //X11
   for (j = 0; j < 64; j++) {
     for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
     	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
       elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
       inputs[2][j][k] -= elem_a; // A21-A11
@@ -345,6 +355,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   //X12
   for (j = 0; j < 64; j++) {
     for (k = 0, k_offset = 64; k < 64; k++, k_offset++) {
+#pragma HLS PIPELINE
     	  elem_b = ARRAYi_X(inB, j, k_offset, 128, 128);
         inputs[3][j][k] += elem_b; // B11+B12
     }
@@ -356,6 +367,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   
   top_C22_out_0:for (j = 0; j < 64; j++) {
     top_C22_out_1:for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
       // M1 - M2 + M3 + M6
       ARRAYi_X(OutC, j+64, k+64, 128, 128) = mults[0][j][k] - mults[2][j][k] + mults[3][j][k] + mults[1][j][k];  // C11
     }
@@ -536,6 +548,7 @@ void strassen_8x8(cnndata_t InA[8][8],
 
 	strassen_8x8_in_0:for (j = 0; j < 4; j++) {
 	  strassen_8x8_in_1:for (k = 0; k < 4; k++) {
+#pragma HLS PIPELINE
 		  inputs[0][j][k] = InA[j][k] + InA[j+4][k+4]; // A11+A22
 		  inputs[1][j][k] = InB[j][k] + InB[j+4][k+4]; // B11+B22
 		  inputs[2][j][k] = InA[j+4][k] + InA[j+4][k+4]; // A21+A22
@@ -565,6 +578,7 @@ void strassen_8x8(cnndata_t InA[8][8],
 	// create outputs
   strassen_8x8_out_0:for (j = 0; j < 4; j++) {
 		strassen_8x8_out_1:for (k = 0; k < 4; k++) {
+#pragma HLS PIPELINE
 			OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
 			OutC[j][k+4] = mults[2][j][k] + mults[4][j][k];  // C12
 			OutC[j+4][k] = mults[1][j][k] + mults[3][j][k];  // C21
@@ -607,6 +621,7 @@ void strassen_4x4(cnndata_t InA[4][4],
 	}
 
 	strassen_4x4_solve: for (i = 0; i < 7; i++) {
+#pragma HLS UNROLL
     #ifdef NON_RECURSIVE_2
       mmm_2x2(inputs[2*i], inputs[2*i+1], mults[i]);
     #else
