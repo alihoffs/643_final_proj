@@ -62,6 +62,9 @@
 #include "util643.h"
 
 // create function headers for strassen recursion
+void strassen_128x128(cnndata_t InA[128][128],
+					  cnndata_t InB[128][128],
+					  cnndata_t OutC[128][128]);
 void strassen_64x64(cnndata_t InA[64][64],
                     cnndata_t InB[64][64],
                     cnndata_t OutC[64][64]);
@@ -117,6 +120,266 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 
   index_t i, j, k, j_offset, k_offset;
 
+  cnndata_t inputs[8][128][128];
+#pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=block variable=inputs
+#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=bram
+  cnndata_t mults[4][128][128];
+#pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=block variable=mults
+#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=bram
+  cnndata_t elem_a, elem_b;
+
+
+  // compute C11: M1+M4-M5+M7
+  //M1=(A11+A22)(B11+B22)
+  //M4=A22(B21-B11)
+  //M5=(A11+A12)B22
+  //M7=(A12-A22)(B21+B22)
+
+  //X21
+  for (j = 0, j_offset = 128; j < 128; j++, j_offset++) {
+    for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+    	elem_b = ARRAYi_X(inB, j_offset, k, 256, 256);
+        inputs[3][j][k] = elem_b; // B21-B11
+        inputs[7][j][k] = elem_b; // B21+B22
+    }
+  }
+
+  //X12
+  for (j = 0; j < 128; j++) {
+    for (k = 0, k_offset = 128; k < 128; k++, k_offset++) {
+#pragma HLS PIPELINE
+    	elem_a = ARRAYi_X(inA, j, k_offset, 256, 256);
+        inputs[4][j][k] = elem_a; // A11+A12
+        inputs[6][j][k] = elem_a; // A12-A22
+    }
+  }
+
+  //X11
+  for (j = 0; j < 128; j++) {
+    for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+       	elem_a = ARRAYi_X(inA, j, k, 256, 256);
+       	elem_b = ARRAYi_X(inB, j, k, 256, 256);
+        inputs[0][j][k] = elem_a; // A11+A22
+        inputs[4][j][k] +=  elem_a;// A11+A12
+
+        inputs[1][j][k] = elem_b; // B11+B22
+        inputs[3][j][k] -= elem_b; // B21-B11
+    }
+  }
+
+  //X22
+  for (j = 0, j_offset=128; j < 128; j++, j_offset++) {
+    for (k = 0, k_offset=128; k < 128; k++, k_offset++) {
+#pragma HLS PIPELINE
+       	elem_a = ARRAYi_X(inA, j_offset, k_offset, 256, 256);
+		    elem_b = ARRAYi_X(inB, j_offset, k_offset, 256, 256);
+        inputs[0][j][k] += elem_a; // A11+A22
+        inputs[2][j][k] = elem_a; // A22
+        inputs[6][j][k] -= elem_a; // A12-A22
+
+        inputs[1][j][k] += elem_b; // B11+B22
+        inputs[5][j][k] = elem_b; // B22
+        inputs[7][j][k] += elem_b; // B21+B22
+    }
+  }
+
+
+  for (i = 0; i < 4; i++) {
+  	  strassen_128x128(inputs[2*i], inputs[2*i+1], mults[i]);
+  }
+  top_C11_out_0:for (j = 0; j < 128; j++) {
+    top_C11_out_1:for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+      // M1 + M4 - M5 + M7
+      ARRAYi_X(OutC, j, k, 256, 256) = mults[0][j][k] + mults[1][j][k] - mults[2][j][k] + mults[3][j][k];  // C11
+    }
+  }
+
+
+  // Calc C12
+  //M3=A11(B12-B22)
+  //X11
+  for (j = 0; j < 128; j++) {
+    for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+       	elem_a = ARRAYi_X(inA, j, k, 256, 256);
+        inputs[6][j][k] = elem_a; // A11
+    }
+  }
+
+  //X12
+  for (j = 0; j < 128; j++) {
+    for (k = 0, k_offset = 128; k < 128; k++, k_offset++) {
+#pragma HLS PIPELINE
+    	  elem_b = ARRAYi_X(inB, j, k_offset, 256, 256);
+        inputs[7][j][k] = elem_b; // B12-B22
+    }
+  }
+
+  //X22
+  for (j = 0, j_offset=128; j < 128; j++, j_offset++) {
+    for (k = 0, k_offset=128; k < 128; k++, k_offset++) {
+#pragma HLS PIPELINE
+		    elem_b = ARRAYi_X(inB, j_offset, k_offset, 256, 256);
+        inputs[7][j][k] -= elem_b; // B12-B22
+    }
+  }
+  // Calc M5
+  strassen_128x128(inputs[6], inputs[7], mults[3]);
+
+  top_C12_out_0:for (j = 0; j < 128; j++) {
+    top_C12_out_1:for (k = 0, k_offset=128; k < 128; k++,k_offset++) {
+#pragma HLS PIPELINE
+      // M3 + M5
+      ARRAYi_X(OutC, j, k_offset, 256, 256) = mults[2][j][k] + mults[3][j][k];  // C12
+    }
+  }
+
+  // Calc C21
+  // M2=(A21+A22)B11
+  // Calc M2
+
+  //X11
+ for (j = 0; j < 128; j++) {
+    for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+       	elem_b = ARRAYi_X(inB, j, k, 256, 256);
+        inputs[5][j][k] = elem_b; // B11
+    }
+  }
+  //X21
+  for (j = 0, j_offset = 128; j < 128; j++, j_offset++) {
+    for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+    	elem_a = ARRAYi_X(inA, j_offset, k, 256, 256);
+        inputs[4][j][k] = elem_a; // A21+A22
+    }
+  }
+
+  //X22
+  for (j = 0, j_offset=128; j < 128; j++, j_offset++) {
+    for (k = 0, k_offset=128; k < 128; k++, k_offset++) {
+#pragma HLS PIPELINE
+       	elem_a = ARRAYi_X(inA, j_offset, k_offset, 256, 256);
+        inputs[4][j][k] += elem_a; // A21+A22
+    }
+  }
+
+  strassen_128x128(inputs[4], inputs[5], mults[2]);
+
+  top_C21_out_0:for (j = 0, j_offset=128; j < 128; j++,j_offset++) {
+    top_C21_out_1:for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+      // M2 + M4
+      ARRAYi_X(OutC, j_offset, k, 256, 256) = mults[1][j][k] + mults[2][j][k];  // C21
+    }
+  }
+
+
+  // Compute C22
+  // M6=(A21-A11)(B11+B12) -- evict M1
+  //X21
+  for (j = 0, j_offset = 128; j < 128; j++, j_offset++) {
+    for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+    	elem_a = ARRAYi_X(inA, j_offset, k, 256, 256);
+      inputs[2][j][k] = elem_a; // A21-A11
+    }
+  }
+  //X11
+  for (j = 0; j < 128; j++) {
+    for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+    	elem_a = ARRAYi_X(inA, j_offset, k, 256, 256);
+      elem_b = ARRAYi_X(inB, j_offset, k, 256, 256);
+      inputs[2][j][k] -= elem_a; // A21-A11
+      inputs[3][j][k] = elem_b; // B11+B12
+    }
+  }
+  //X12
+  for (j = 0; j < 128; j++) {
+    for (k = 0, k_offset = 128; k < 128; k++, k_offset++) {
+#pragma HLS PIPELINE
+    	  elem_b = ARRAYi_X(inB, j, k_offset, 256, 256);
+        inputs[3][j][k] += elem_b; // B11+B12
+    }
+  }
+
+
+  // Calc M1 and M7
+    strassen_128x128(inputs[2], inputs[3], mults[1]);
+
+  top_C22_out_0:for (j = 0, j_offset = 128; j < 128; j++, j_offset++) {
+    top_C22_out_1:for (k = 0, k_offset = 128; k < 128; k++, k_offset++) {
+#pragma HLS PIPELINE
+      // M1 - M2 + M3 + M6
+      ARRAYi_X(OutC, j_offset, k_offset, 256, 256) = mults[0][j][k] - mults[2][j][k] + mults[3][j][k] + mults[1][j][k];  // C11
+    }
+  }
+
+}
+#ifdef __VITIS_CL__ // for lab 3
+} // extern
+#endif
+
+// define strassen/recursive mmm's
+void strassen_128x128(cnndata_t InA[128][128],
+					  cnndata_t InB[128][128],
+					  cnndata_t OutC[128][128]) {
+#pragma HLS INLINE recursive
+
+
+  index_t i, j, k;
+
+  cnndata_t inputs[14][64][64];
+#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=bram
+  cnndata_t mults[7][64][64];
+#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=bram
+
+
+  strassen_128x128_in_0:for (j = 0; j < 64; j++) {
+    strassen_128x128_in_1:for (k = 0; k < 64; k++) {
+      inputs[0][j][k] = InA[j][k] + InA[j+64][k+64]; // A11+A22
+      inputs[1][j][k] = InB[j][k] + InB[j+64][k+64]; // B11+B22
+      inputs[2][j][k] = InA[j+64][k] + InA[j+64][k+64]; // A21+A22
+      inputs[3][j][k] = InB[j][k]; // B11
+      inputs[4][j][k] = InA[j][k]; // A11
+      inputs[5][j][k] = InB[j][k+64] - InB[j+64][k+64]; // B12-B22
+      inputs[6][j][k] = InA[j+64][k+64]; // A22
+      inputs[7][j][k] = InB[j+64][k] - InB[j][k]; // B21-B11
+      inputs[8][j][k] = InA[j][k] + InA[j][k+64]; // A11+A12
+      inputs[9][j][k] = InB[j+64][k+64]; // B22
+      inputs[10][j][k] = InA[j+64][k] - InA[j][k]; // A21-A11
+      inputs[11][j][k] = InB[j][k] + InB[j][k+64]; // B11+B12
+      inputs[12][j][k] = InA[j][k+64] - InA[j+64][k+64]; // A12-A22
+      inputs[13][j][k] = InB[j+64][k] + InB[j+64][k+64]; // B21+B22
+  }
+}
+
+strassen_128x128_solve:for (i = 0; i < 7; i++) {
+    #ifdef NON_RECURSIVE_64
+      mmm_64x64(inputs[2*i], inputs[2*i+1], mults[i]);
+    #else
+      strassen_64x64(inputs[2*i], inputs[2*i+1], mults[i]);
+    #endif
+}
+
+// create outputs
+strassen_128x128_out_0:for (j = 0; j < 64; j++) {
+  strassen_128x128_out_1:for (k = 0; k < 64; k++) {
+        OutC[j][k] = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+        OutC[j][k+64] = mults[2][j][k] + mults[4][j][k];  // C12
+        OutC[j+64][k] = mults[1][j][k] + mults[3][j][k];  // C21
+        OutC[j+64][k+64] = mults[0][j][k] - mults[1][j][k] + mults[2][j][k] + mults[5][j][k];  // C22
+    }
+  }
+
+
+/*
+  index_t i, j, k, j_offset, k_offset;
+
   cnndata_t inputs[8][64][64];
 #pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=block variable=inputs
 #pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=bram
@@ -124,70 +387,6 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 #pragma HLS ARRAY_RESHAPE dim=1 factor=2 type=block variable=mults
 #pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=bram
   cnndata_t elem_a, elem_b;
-
-  // initialize inputs
-  // initialize A21
-//  for (j = 0, j_offset = 64; j < 64; j++, j_offset++) {
-//    for (k = 0; k < 64; k++) {
-//    	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
-//    	elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
-//        inputs[2][j][k] = elem_a; // A21+A22
-//        inputs[10][j][k] = elem_a; // A21-A11
-//
-//        inputs[7][j][k] = elem_b; // B21-B11
-//        inputs[13][j][k] = elem_b; // B21+B22
-//    }
-//  }
-//
-//  // initialize A12
-//  for (j = 0; j < 64; j++) {
-//    for (k = 0, k_offset = 64; k < 64; k++, k_offset++) {
-//#pragma HLS PIPELINE
-//    	elem_a = ARRAYi_X(inA, j, k_offset, 128, 128);
-//    	elem_b = ARRAYi_X(inB, j, k_offset, 128, 128);
-//        inputs[8][j][k] = elem_a;// A11+A12
-//        inputs[12][j][k] = elem_a; // A12-A22
-//
-//        inputs[5][j][k] = elem_b; // B12-B22
-//        inputs[11][j][k] = elem_b; // B11+B12
-//    }
-//  }
-//
-//  // initialize A11
-//  for (j = 0; j < 64; j++) {
-//    for (k = 0; k < 64; k++) {
-//       	elem_a = ARRAYi_X(inA, j, k, 128, 128);
-//       	elem_b = ARRAYi_X(inB, j, k, 128, 128);
-//        inputs[0][j][k] = elem_a; // A11+A22
-//        inputs[4][j][k] = elem_a; // A11
-//        inputs[8][j][k] +=  elem_a;// A11+A12
-//        inputs[10][j][k] -= elem_a; // A21-A11
-//
-//        inputs[1][j][k] = elem_b; // B11+B22
-//        inputs[3][j][k] = elem_b; // B11
-//        inputs[7][j][k] -= elem_b; // B21-B11
-//        inputs[11][j][k] += elem_b; // B11+B12
-//    }
-//  }
-//
-//  // initialize A22
-//  for (j = 0, j_offset=64; j < 64; j++, j_offset++) {
-//    for (k = 0, k_offset=64; k < 64; k++, k_offset++) {
-//       	elem_a = ARRAYi_X(inA, j_offset, k_offset, 128, 128);
-//		elem_b = ARRAYi_X(inB, j_offset, k_offset, 128, 128);
-//        inputs[0][j][k] += elem_a; // A11+A22
-//        inputs[2][j][k] += elem_a; // A21+A22
-//        inputs[6][j][k] = elem_a; // A22
-//        inputs[12][j][k] -= elem_a; // A12-A22
-//
-//        inputs[1][j][k] += elem_b; // B11+B22
-//        inputs[5][j][k] -= elem_b; // B12-B22
-//        inputs[9][j][k] = elem_b; // B22
-//        inputs[13][j][k] += elem_b; // B21+B22
-//
-//
-//    }
-//  }
 
 
   // compute C11: M1+M4-M5+M7
@@ -200,9 +399,10 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0, j_offset = 64; j < 64; j++, j_offset++) {
     for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-    	elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
+    	// elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
+    	elem_b = InB[j_offset][k];
         inputs[3][j][k] = elem_b; // B21-B11
-        inputs[7][j][k] = elem_b; // B21+B22    
+        inputs[7][j][k] = elem_b; // B21+B22
     }
   }
 
@@ -210,18 +410,21 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0; j < 64; j++) {
     for (k = 0, k_offset = 64; k < 64; k++, k_offset++) {
 #pragma HLS PIPELINE
-    	elem_a = ARRAYi_X(inA, j, k_offset, 128, 128);
+    	// elem_a = ARRAYi_X(inA, j, k_offset, 128, 128);
+    	elem_a = InA[j][k_offset];
         inputs[4][j][k] = elem_a; // A11+A12
         inputs[6][j][k] = elem_a; // A12-A22
     }
-  }  
+  }
 
   //X11
   for (j = 0; j < 64; j++) {
     for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-       	elem_a = ARRAYi_X(inA, j, k, 128, 128);
-       	elem_b = ARRAYi_X(inB, j, k, 128, 128);
+       	// elem_a = ARRAYi_X(inA, j, k, 128, 128);
+       	elem_a = InA[j][k];
+       	// elem_b = ARRAYi_X(inB, j, k, 128, 128);
+       	elem_b = InB[j][k];
         inputs[0][j][k] = elem_a; // A11+A22
         inputs[4][j][k] +=  elem_a;// A11+A12
 
@@ -234,8 +437,10 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0, j_offset=64; j < 64; j++, j_offset++) {
     for (k = 0, k_offset=64; k < 64; k++, k_offset++) {
 #pragma HLS PIPELINE
-       	elem_a = ARRAYi_X(inA, j_offset, k_offset, 128, 128);
-		    elem_b = ARRAYi_X(inB, j_offset, k_offset, 128, 128);
+       	// elem_a = ARRAYi_X(inA, j_offset, k_offset, 128, 128);
+       	elem_a = InA[j_offset][k_offset];
+		// elem_b = ARRAYi_X(inB, j_offset, k_offset, 128, 128);
+		elem_b = InB[j_offset][k_offset];
         inputs[0][j][k] += elem_a; // A11+A22
         inputs[2][j][k] = elem_a; // A22
         inputs[6][j][k] -= elem_a; // A12-A22
@@ -254,7 +459,8 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
     top_C11_out_1:for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
       // M1 + M4 - M5 + M7
-      ARRAYi_X(OutC, j, k, 128, 128) = mults[0][j][k] + mults[1][j][k] - mults[2][j][k] + mults[3][j][k];  // C11
+      // ARRAYi_X(OutC, j, k, 128, 128) = mults[0][j][k] + mults[1][j][k] - mults[2][j][k] + mults[3][j][k];  // C11
+      OutC[j][k] = mults[0][j][k] + mults[1][j][k] - mults[2][j][k] + mults[3][j][k];  // C11
     }
   }
 
@@ -265,7 +471,8 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0; j < 64; j++) {
     for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-       	elem_a = ARRAYi_X(inA, j, k, 128, 128);
+       	// elem_a = ARRAYi_X(inA, j, k, 128, 128);
+       	elem_a = InA[j][k];
         inputs[6][j][k] = elem_a; // A11
     }
   }
@@ -274,16 +481,18 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0; j < 64; j++) {
     for (k = 0, k_offset = 64; k < 64; k++, k_offset++) {
 #pragma HLS PIPELINE
-    	  elem_b = ARRAYi_X(inB, j, k_offset, 128, 128);
+    	// elem_b = ARRAYi_X(inB, j, k_offset, 128, 128);
+    	elem_b = InB[j][k_offset];
         inputs[7][j][k] = elem_b; // B12-B22
     }
-  } 
+  }
 
   //X22
   for (j = 0, j_offset=64; j < 64; j++, j_offset++) {
     for (k = 0, k_offset=64; k < 64; k++, k_offset++) {
 #pragma HLS PIPELINE
-		    elem_b = ARRAYi_X(inB, j_offset, k_offset, 128, 128);
+		// elem_b = ARRAYi_X(inB, j_offset, k_offset, 128, 128);
+		elem_b = InB[j_offset][k_offset];
         inputs[7][j][k] -= elem_b; // B12-B22
     }
   }
@@ -294,19 +503,21 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
     top_C12_out_1:for (k = 0, k_offset=64; k < 64; k++,k_offset++) {
 #pragma HLS PIPELINE
       // M3 + M5
-      ARRAYi_X(OutC, j, k_offset, 128, 128) = mults[2][j][k] + mults[3][j][k];  // C12
+      // ARRAYi_X(OutC, j, k_offset, 128, 128) = mults[2][j][k] + mults[3][j][k];  // C12
+      OutC[j][k_offset] = mults[2][j][k] + mults[3][j][k];  // C12
     }
   }
 
   // Calc C21
   // M2=(A21+A22)B11
-  // Calc M2 
+  // Calc M2
 
   //X11
  for (j = 0; j < 64; j++) {
     for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-       	elem_b = ARRAYi_X(inB, j, k, 128, 128);
+       	// elem_b = ARRAYi_X(inB, j, k, 128, 128);
+       	elem_b = InB[j][k];
         inputs[5][j][k] = elem_b; // B11
     }
   }
@@ -314,7 +525,8 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0, j_offset = 64; j < 64; j++, j_offset++) {
     for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-    	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
+    	// elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
+    	elem_a = InA[j_offset][k];
         inputs[4][j][k] = elem_a; // A21+A22
     }
   }
@@ -323,18 +535,20 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0, j_offset=64; j < 64; j++, j_offset++) {
     for (k = 0, k_offset=64; k < 64; k++, k_offset++) {
 #pragma HLS PIPELINE
-       	elem_a = ARRAYi_X(inA, j_offset, k_offset, 128, 128);
+       	// elem_a = ARRAYi_X(inA, j_offset, k_offset, 128, 128);
+       	elem_a = InA[j_offset][k_offset];
         inputs[4][j][k] += elem_a; // A21+A22
     }
   }
 
   strassen_64x64(inputs[4], inputs[5], mults[2]);
- 
+
   top_C21_out_0:for (j = 0, j_offset=64; j < 64; j++,j_offset++) {
     top_C21_out_1:for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
       // M2 + M4
-      ARRAYi_X(OutC, j_offset, k, 128, 128) = mults[1][j][k] + mults[2][j][k];  // C21
+      // ARRAYi_X(OutC, j_offset, k, 128, 128) = mults[1][j][k] + mults[2][j][k];  // C21
+      OutC[j_offset][k] = mults[1][j][k] + mults[2][j][k];  // C21
     }
   }
 
@@ -345,7 +559,8 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0, j_offset = 64; j < 64; j++, j_offset++) {
     for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-    	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
+      // elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
+      elem_a = InA[j_offset][k];
       inputs[2][j][k] = elem_a; // A21-A11
     }
   }
@@ -353,8 +568,10 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0; j < 64; j++) {
     for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-    	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
-      elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
+      // elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
+      elem_a = InA[j_offset][k];
+      // elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
+      elem_b = InB[j_offset][k];
       inputs[2][j][k] -= elem_a; // A21-A11
       inputs[3][j][k] = elem_b; // B11+B12
     }
@@ -363,30 +580,28 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   for (j = 0; j < 64; j++) {
     for (k = 0, k_offset = 64; k < 64; k++, k_offset++) {
 #pragma HLS PIPELINE
-    	  elem_b = ARRAYi_X(inB, j, k_offset, 128, 128);
+    	// elem_b = ARRAYi_X(inB, j, k_offset, 128, 128);
+    	elem_b = InB[j][k_offset];
         inputs[3][j][k] += elem_b; // B11+B12
-    }
-  } 
-
-
-  // Calc M1 and M7
-    strassen_64x64(inputs[2], inputs[3], mults[1]);
-  
-  top_C22_out_0:for (j = 0; j < 64; j++) {
-    top_C22_out_1:for (k = 0; k < 64; k++) {
-#pragma HLS PIPELINE
-      // M1 - M2 + M3 + M6
-      ARRAYi_X(OutC, j+64, k+64, 128, 128) = mults[0][j][k] - mults[2][j][k] + mults[3][j][k] + mults[1][j][k];  // C11
     }
   }
 
 
-}
-#ifdef __VITIS_CL__ // for lab 3
-} // extern
-#endif
+  // Calc M1 and M7
+    strassen_64x64(inputs[2], inputs[3], mults[1]);
 
-// define strassen/recursive mmm's
+  top_C22_out_0:for (j = 0; j < 64; j++) {
+    top_C22_out_1:for (k = 0; k < 64; k++) {
+#pragma HLS PIPELINE
+      // M1 - M2 + M3 + M6
+      // ARRAYi_X(OutC, j+64, k+64, 128, 128) = mults[0][j][k] - mults[2][j][k] + mults[3][j][k] + mults[1][j][k];  // C11
+      OutC[j+64][k+64] = mults[0][j][k] - mults[2][j][k] + mults[3][j][k] + mults[1][j][k];  // C11
+    }
+  }
+*/
+
+}
+
 void strassen_64x64(cnndata_t InA[64][64],
                     cnndata_t InB[64][64],
                     cnndata_t OutC[64][64]) {
@@ -527,7 +742,7 @@ strassen_16x16_solve:for (i = 0; i < 7; i++) {
     #else
 	    strassen_8x8(inputs[2*i], inputs[2*i+1], mults[i]);
     #endif
-  
+
 }
 
 // create outputs
