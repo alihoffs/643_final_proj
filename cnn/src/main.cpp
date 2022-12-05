@@ -44,10 +44,11 @@ int main(int argc, char* argv[]) {
     cnndata_t *ptr_inA, *ptr_inB, *ptr_output;
     cnndata_t *ref_inA, *ref_inB, *ref_output;
 
+    // TODO: Change to size
     // Compute the size of array in bytes
-    uint64_t num_elem_inA = 128 * 128; //BATCH_SIZE * N_IFM(0) * R_IFM(0) * C_IFM(0);
-    uint64_t num_elem_inB = 128 * 128;
-    uint64_t num_elem_outputs = 128 * 128;
+    uint64_t num_elem_inA = 256 * 256; //BATCH_SIZE * N_IFM(0) * R_IFM(0) * C_IFM(0);
+    uint64_t num_elem_inB = 256 * 256;
+    uint64_t num_elem_outputs = 256 * 256;
 
 #ifdef __VITIS_CL__
     // Hard coding xclbin filenames, ignoring command line arguments
@@ -133,9 +134,9 @@ int main(int argc, char* argv[]) {
     // copy ref copy to kernel use copy, converting to kernel expected layout
     // TODO: need to change COPY_BUF4D
     COPY_BUF2D(ref_inA, ARRAY2, ptr_inA, ARRAYi_X,
-            128,  128);
+            256,  256);
     COPY_BUF2D(ref_inB, ARRAY2, ptr_inB, ARRAYi_X,
-            128, 128);
+            256, 256);
     // COPY_BUF2D(ref_weight[1], ARRAY4, ptr_weight[1], ARRAYw_X,
     //         64, 64);
 #endif

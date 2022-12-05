@@ -92,7 +92,7 @@ static const std::string cnn_error_message =
 bool verify(cnndata_t *ref, cnndata_t *checkit) {
     uint64_t row, col;
 
-
+// TODO: Change for 256
     for(row = 0; row < 128; row++) {
         for(col = 0; col < 128 ; col++) {
             cnndata_t refval = ARRAY2(ref,row,col,128,128);
@@ -115,6 +115,7 @@ bool cnn_check(cnndata_t *ptr_inA, cnndata_t *ptr_inB, cnndata_t *ptr_output,
         cnndata_t *ref_inA, cnndata_t *ref_inB, cnndata_t *ref_output,
         uint64_t layer) {
 
+	// TODO: Update to 256
 
     uint64_t row, col, k;
     bool mismatch;
