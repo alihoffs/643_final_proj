@@ -93,11 +93,11 @@ bool verify(cnndata_t *ref, cnndata_t *checkit) {
     uint64_t row, col;
 
 // TODO: Change for 256
-    for(row = 0; row < 128; row++) {
-        for(col = 0; col < 128 ; col++) {
-            cnndata_t refval = ARRAY2(ref,row,col,128,128);
+    for(row = 0; row < 256; row++) {
+        for(col = 0; col < 256 ; col++) {
+            cnndata_t refval = ARRAY2(ref,row,col,256,256);
 
-            cnndata_t checkval = ARRAY2(checkit,row,col,128,128) ;
+            cnndata_t checkval = ARRAY2(checkit,row,col,256,256) ;
 
             if (!nearlyEqual(checkval, refval)) {
                 printf("\n***Result does not match reference:  "
@@ -130,17 +130,17 @@ bool cnn_check(cnndata_t *ptr_inA, cnndata_t *ptr_inB, cnndata_t *ptr_output,
     }
     std::cout << "Verifying matrix multiply result..." << std::endl;
     // initialize ref_output to 0 for easy multiply accumulate
-    for (row = 0; row < 128; row++) {
-        for (col = 0; col < 128; col++) {
-            ref_output[row*128+col] = 0;
+    for (row = 0; row < 256; row++) {
+        for (col = 0; col < 256; col++) {
+            ref_output[row*256+col] = 0;
         }
     }
 
     // compute the correct result
-    for (row = 0; row < 128; row++) {
-        for (col = 0; col < 128; col++) {
-            for (k = 0; k < 128; k++) {
-                ref_output[row*128 + col] += ref_inA[row*128 + k]*ref_inB[k*128 + col];
+    for (row = 0; row < 256; row++) {
+        for (col = 0; col < 256; col++) {
+            for (k = 0; k < 256; k++) {
+                ref_output[row*256 + col] += ref_inA[row*256 + k]*ref_inB[k*256 + col];
             }
         }
     }
