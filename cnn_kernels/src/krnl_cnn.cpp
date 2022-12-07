@@ -990,35 +990,79 @@ void strassen_4x4(cnndata_t InA[4][4],
 void strassen_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]) {
 
   index_t i, j, k;
-  cnndata_t inputs[14];
-#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=lutram
-  cnndata_t mults[7];
-#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=lutram
-      inputs[0]= InA[0][0] + InA[1][1]; // A11+A22
-      inputs[1]= InB[0][0] + InB[1][1]; // B11+B22
-      inputs[2]= InA[1][0] + InA[1][1]; // A21+A22
-      inputs[3]= InB[0][0]; // B11
-      inputs[4]= InA[0][0]; // A11
-      inputs[5]= InB[0][1] - InB[1][1]; // B12-B22
-      inputs[6]= InA[1][1]; // A22
-      inputs[7]= InB[1][0] - InB[0][0]; // B21-B11
-      inputs[8]= InA[0][0] + InA[0][1]; // A11+A12
-      inputs[9]= InB[1][1]; // B22
-      inputs[10] = InA[1][0] - InA[0][0]; // A21-A11
-      inputs[11] = InB[0][0] + InB[0][1]; // B11+B12
-      inputs[12] = InA[0][1] - InA[1][1]; // A12-A22
-      inputs[13] = InB[1][0] + InB[1][1]; // B21+B22
+//  cnndata_t inputs[14];
+//#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=lutram
+//  cnndata_t mults[7];
+//#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=lutram
 
-// create outputs
-      strassen_2x2_solve:for (i = 0; i < 7; i++) {
-#pragma HLS UNROLL
-        mults[i] = inputs[2*i]*inputs[2*i+1];
-      }
+  cnndata_t input_0, input_1, input_2, input_3, input_4, input_5, input_6, input_7, input_8, input_9, input_10, input_11, input_12, input_13;
+//  cnndata_t mult_0, mult_1, mult_2, mult_3, mult_4, mult_5, mult_6;
+#pragma HLS BIND_STORAGE variable=input_0 type=ram_2p impl=lutram
+#pragma HLS BIND_STORAGE variable=input_1 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_2 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_3 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_4 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_5 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_6 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_7 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_8 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_9 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_10 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_11 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_12 type=ram_2p impl=bram
+#pragma HLS BIND_STORAGE variable=input_13 type=ram_2p impl=bram
 
-        OutC[0][0] = mults[0] + mults[3] - mults[4] + mults[6];  // C11
-        OutC[0][1] = mults[2] + mults[4];  // C12
-        OutC[1][0] = mults[1] + mults[3];  // C21
-        OutC[1][1] = mults[0] - mults[1] + mults[2] + mults[5];  // C22
+//#pragma HLS BIND_STORAGE variable=mult type=ram_2p impl=lutram
+  input_0 = InA[0][0] + InA[1][1]; // A11+A22
+  input_1 = InB[0][0] + InB[1][1]; // B11+B22
+//  mult_0 = input_0 * input_1;
+  OutC[0][0] = input_0 * input_1;
+  OutC[1][1] = input_0 * input_1;
+
+  input_2 = InA[1][0] + InA[1][1]; // A21+A22
+//  input_3 = InB[0][0]; // B11
+//  mult_1 = input_2 * InB[0][0];
+  OutC[1][0] = input_2 * InB[0][0];
+  OutC[1][1] -= input_2 * InB[0][0];
+
+//  input_4 = InA[0][0]; // A11
+  input_5 = InB[0][1] - InB[1][1]; // B12-B22
+//  mult_2 = InA[0][0] * input_5;
+  OutC[0][1] = InA[0][0] * input_5;
+  OutC[1][1] += InA[0][0] * input_5;
+
+//  input_6 = InA[1][1]; // A22
+  input_7 = InB[1][0] - InB[0][0]; // B21-B11
+//  mult_3 = InA[1][1] * input_7;
+  OutC[0][0] += InA[1][1] * input_7;
+  OutC[1][0] += InA[1][1] * input_7;
+
+  input_8 = InA[0][0] + InA[0][1]; // A11+A12
+//  input_9 = InB[1][1]; // B22
+//  mult_4 = input_8 * InB[1][1];
+  OutC[0][0] -= input_8 * InB[1][1];
+  OutC[0][1] += input_8 * InB[1][1];
+
+  input_10 = InA[1][0] - InA[0][0]; // A21-A11
+  input_11 = InB[0][0] + InB[0][1]; // B11+B12
+//  mult_5 = input_10 * input_11;
+  OutC[1][1] += input_10 * input_11;
+
+  input_12 = InA[0][1] - InA[1][1]; // A12-A22
+  input_13 = InB[1][0] + InB[1][1]; // B21+B22
+//  mult_6 = input_12 * input_13;
+  OutC[0][0] += input_12 * input_13;
+
+//// create outputs
+//      strassen_2x2_solve:for (i = 0; i < 7; i++) {
+//#pragma HLS UNROLL
+//        mults[i] = inputs[2*i]*inputs[2*i+1];
+//      }
+//
+//        OutC[0][0] = mults[0] + mults[3] - mults[4] + mults[6];  // C11
+//        OutC[0][1] = mults[2] + mults[4];  // C12
+//        OutC[1][0] = mults[1] + mults[3];  // C21
+//        OutC[1][1] = mults[0] - mults[1] + mults[2] + mults[5];  // C22
 }
 
 void mmm_512x512(cnndata_t InA[512][512], cnndata_t InB[512][512], cnndata_t OutC[512][512]) {
