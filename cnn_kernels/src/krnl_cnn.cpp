@@ -126,7 +126,6 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   cnndata_t mults[4][128][128];
 #pragma HLS ARRAY_RESHAPE dim=1 type=complete variable=mults
 #pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=bram
-  cnndata_t elem_a, elem_b;
 
 
   // compute C11: M1+M4-M5+M7
