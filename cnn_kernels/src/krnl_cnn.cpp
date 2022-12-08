@@ -89,6 +89,9 @@ void strassen_2x2(cnndata_t InA[2][2],
 void mmm_512x512(cnndata_t InA[512][512],
                     cnndata_t InB[512][512],
                     cnndata_t OutC[512][512]);
+void mmm_256x256(cnndata_t InA[256][256],
+                    cnndata_t InB[256][256],
+                    cnndata_t OutC[128][128]);
 void mmm_128x128(cnndata_t InA[128][128],
                     cnndata_t InB[128][128],
                     cnndata_t OutC[128][128]);
@@ -276,6 +279,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 /* COMPUTE M7
 * M7=(A12-A22)(B21+B22) */
   //X21
+  // change to +=
   for (j = 0, j_offset = 128; j < 128; j++, j_offset++) {
     for (k = 0; k < 128; k++) {
 #pragma HLS PIPELINE
@@ -298,13 +302,14 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
         inputs[0][j][k] -= ARRAYi_X(inA, j_offset, k_offset, 256, 256); // A12-A22  
     }
   }
+  // comment this out
   for (j = 0, j_offset=128; j < 128; j++, j_offset++) {
     for (k = 0, k_offset=128; k < 128; k++, k_offset++) {
 #pragma HLS PIPELINE
         inputs[1][j][k] += ARRAYi_X(inB, j_offset, k_offset, 256, 256); // B21+B22
     }
   }
-
+  
 
  strassen_128x128(inputs[0], inputs[1], mults[3]);
 
@@ -413,12 +418,15 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
       inputs[0][j][k] -= ARRAYi_X(inA, j_offset, k, 256, 256); // A21-A11
     }
   }
+  
+  // could be potentially removed, since inputs[1] is previously B11
   for (j = 0; j < 128; j++) {
     for (k = 0; k < 128; k++) {
 #pragma HLS PIPELINE
-      inputs[1][j][k] = ARRAYi_X(inB, j_offset, k, 256, 256); // B11+B12
+      inputs[1][j][k] = ARRAYi_X(inB, j, k, 256, 256); // B11+B12
     }
   }
+  
   //X12
   for (j = 0; j < 128; j++) {
     for (k = 0, k_offset = 128; k < 128; k++, k_offset++) {
@@ -1033,6 +1041,21 @@ void mmm_512x512(cnndata_t InA[512][512], cnndata_t InB[512][512], cnndata_t Out
     mmm_512x512_1:for (j = 0; j < 512; j++) {
       output = 0;
       mmm_512x512_2:for (k = 0; k < 512; k++){
+        output += InA[i][k]*InB[k][j];
+      }
+      OutC[i][j] = output;
+    }
+  }
+}
+
+void mmm_256x256(cnndata_t InA[256][256], cnndata_t InB[256][256], cnndata_t OutC[256][256]) {
+  std::cout << "--- non-recursive mmm_256x256 ---" << std::endl;
+  index_t i, j, k;
+  cnndata_t output;
+	mmm_256x256_0:for (i = 0; i < 256; i++) {
+    mmm_256x256_1:for (j = 0; j < 256; j++) {
+      output = 0;
+      mmm_256x256_2:for (k = 0; k < 256; k++){
         output += InA[i][k]*InB[k][j];
       }
       OutC[i][j] = output;
