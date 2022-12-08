@@ -913,7 +913,6 @@ void strassen_8x8(cnndata_t InA[8][8],
 	}
 
 	strassen_8x8_solve:for (i = 0; i < 7; i++) {
-#pragma HLS UNROLL factor=2
 //#pragma HLS UNROLL factor=2
 
     #ifdef NON_RECURSIVE_4
