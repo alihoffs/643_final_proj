@@ -2,3 +2,5 @@
 vitis_pid*
 .analytics
 *.log
+cnn_kernels/Emulation-HW/
+cnn_system_hw_link/Emulation-HW/
