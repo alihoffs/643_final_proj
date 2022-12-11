@@ -53,28 +53,15 @@ int main(int argc, char* argv[]) {
     // Hard coding xclbin filenames, ignoring command line arguments
     std::string xclbinFilename[3] = {
         "binary_container_X.xclbin",
-//        "binary_container_0.xclbin",
-//        "binary_container_1.xclbin"
+
     };
 #endif
-
-    // print_params(0);
-    // print_params(1);
-
     cl_object cl_obj;
 
-#ifdef ENABLE_DFX
-    krnl_object cnn_obj[2];
-    cnn_obj[0].index = 0;
-    cnn_obj[0].name = "krnl_cnn_layer0";
-
-    cnn_obj[1].index = 1;
-    cnn_obj[1].name = "krnl_cnn_layer1";
-#else
     krnl_object cnn_obj;
     cnn_obj.index = 0;
     cnn_obj.name = "krnl_cnn_layerX";
-#endif
+
 
 #ifdef __VITIS_CL__
     std::cout << "===== Initialize device ======" << std::endl;

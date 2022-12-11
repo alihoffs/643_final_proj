@@ -83,7 +83,7 @@ typedef uint32_t index_t;
 //#define NON_RECURSIVE_8
 //#define NON_RECURSIVE_16
 //#define NON_RECURSIVE_32
-//#define NON_RECURSIVE_64
+ #define NON_RECURSIVE_64
 
 //#define NON_RECURSIVE_128
 //#define NON_RECURSIVE_512
@@ -94,4 +94,51 @@ extern "C"
 #endif
 void krnl_cnn_layerX(const cnndata_t* input, const cnndata_t* weights,
         cnndata_t* output);
+
+// create function headers for strassen recursion
+void strassen_64x64(cnndata_t InA[64][64],
+                    cnndata_t InB[64][64],
+                    cnndata_t OutC[64][64]);
+void strassen_32x32(cnndata_t InA[32][32],
+                    cnndata_t InB[32][32],
+                    cnndata_t OutC[32][32]);
+void strassen_16x16(cnndata_t InA[16][16],
+                    cnndata_t InB[16][16],
+                    cnndata_t OutC[16][16]);
+void strassen_8x8(cnndata_t InA[8][8],
+                  cnndata_t InB[8][8],
+                  cnndata_t OutC[8][8]);
+void strassen_4x4(cnndata_t InA[4][4],
+                  cnndata_t InB[4][4],
+                  cnndata_t OutC[4][4]);
+void strassen_2x2(cnndata_t InA[2][2],
+                  cnndata_t InB[2][2],
+                  cnndata_t OutC[2][2]);
+
+// create function headers for non-recursive mmm's
+
+void mmm_512x512(cnndata_t InA[512][512],
+                cnndata_t InB[512][512],
+                cnndata_t OutC[512][512]);
+void mmm_128x128(cnndata_t InA[128][128],
+                cnndata_t InB[128][128],
+                cnndata_t OutC[128][128]);
+void mmm_64x64(cnndata_t InA[64][64],
+                cnndata_t InB[64][64],
+                cnndata_t OutC[64][64]);
+void mmm_32x32(cnndata_t InA[32][32],
+                cnndata_t InB[32][32],
+                cnndata_t OutC[32][32]);
+void mmm_16x16(cnndata_t InA[16][16],
+                cnndata_t InB[16][16],
+                cnndata_t OutC[16][16]);
+void mmm_8x8(cnndata_t InA[8][8],
+                cnndata_t InB[8][8],
+                cnndata_t OutC[8][8]);
+void mmm_4x4(cnndata_t InA[4][4],
+                cnndata_t InB[4][4],
+                cnndata_t OutC[4][4]);
+void mmm_2x2(cnndata_t InA[2][2],
+                cnndata_t InB[2][2],
+                cnndata_t OutC[2][2]);
 

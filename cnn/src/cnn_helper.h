@@ -49,6 +49,8 @@ void cnn_run_kernel(cl_object &cl_obj, krnl_object &krnl_obj0,
 #endif
 
 // Verification functions
+bool verify(cnndata_t *ref, cnndata_t *checkit);
+
 bool cnn_check(cnndata_t *ptr_a, cnndata_t *ptr_b, cnndata_t *ptr_result,
        cnndata_t *ref_a, cnndata_t *ref_b, cnndata_t *ref_result,
        uint64_t layer);

@@ -61,53 +61,6 @@
 
 #include "util643.h"
 
-// create function headers for strassen recursion
-void strassen_64x64(cnndata_t InA[64][64],
-                    cnndata_t InB[64][64],
-                    cnndata_t OutC[64][64]);
-void strassen_32x32(cnndata_t InA[32][32],
-                    cnndata_t InB[32][32],
-                    cnndata_t OutC[32][32]);
-void strassen_16x16(cnndata_t InA[16][16],
-                    cnndata_t InB[16][16],
-                    cnndata_t OutC[16][16]);
-void strassen_8x8(cnndata_t InA[8][8],
-                  cnndata_t InB[8][8],
-                  cnndata_t OutC[8][8]);
-void strassen_4x4(cnndata_t InA[4][4],
-                  cnndata_t InB[4][4],
-                  cnndata_t OutC[4][4]);
-void strassen_2x2(cnndata_t InA[2][2],
-				  cnndata_t InB[2][2],
-				  cnndata_t OutC[2][2]);
-
-// create function headers for non-recursive mmm's
-
-void mmm_512x512(cnndata_t InA[512][512],
-                    cnndata_t InB[512][512],
-                    cnndata_t OutC[512][512]);
-void mmm_128x128(cnndata_t InA[128][128],
-                    cnndata_t InB[128][128],
-                    cnndata_t OutC[128][128]);
-void mmm_64x64(cnndata_t InA[64][64],
-                    cnndata_t InB[64][64],
-                    cnndata_t OutC[64][64]);
-void mmm_32x32(cnndata_t InA[32][32],
-                    cnndata_t InB[32][32],
-                    cnndata_t OutC[32][32]);
-void mmm_16x16(cnndata_t InA[16][16],
-                    cnndata_t InB[16][16],
-                    cnndata_t OutC[16][16]);
-void mmm_8x8(cnndata_t InA[8][8],
-                  cnndata_t InB[8][8],
-                  cnndata_t OutC[8][8]);
-void mmm_4x4(cnndata_t InA[4][4],
-                  cnndata_t InB[4][4],
-                  cnndata_t OutC[4][4]);
-void mmm_2x2(cnndata_t InA[2][2],
-				  cnndata_t InB[2][2],
-				  cnndata_t OutC[2][2]);
-
 #ifdef __VITIS_CL__
 extern "C" {
 #endif
@@ -201,8 +154,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   top_C11_0:for (j = 0; j < 64; j++) {
     top_C11_1:for (k = 0; k < 64; k++) {
 #pragma HLS PIPELINE
-
-      ARRAYi_X(OutC, j, k, 128, 128) = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
+    ARRAYi_X(OutC, j, k, 128, 128) = mults[0][j][k] + mults[3][j][k] - mults[4][j][k] + mults[6][j][k];  // C11
     }
   }
   top_C12_0:for (j = 0; j < 64; j++) {
@@ -532,7 +484,7 @@ void strassen_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]
 }
 
 void mmm_512x512(cnndata_t InA[512][512], cnndata_t InB[512][512], cnndata_t OutC[512][512]) {
-  std::cout << "--- non-recursive mmm_512x512 ---" << std::endl;
+  //std::cout << "--- non-recursive mmm_512x512 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_512x512_0:for (i = 0; i < 512; i++) {
@@ -547,7 +499,7 @@ void mmm_512x512(cnndata_t InA[512][512], cnndata_t InB[512][512], cnndata_t Out
 }
 
 void mmm_128x128(cnndata_t InA[128][128], cnndata_t InB[128][128], cnndata_t OutC[128][128]) {
-  std::cout << "--- non-recursive mmm_128x128 ---" << std::endl;
+  //std::cout << "--- non-recursive mmm_128x128 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_128x128_0:for (i = 0; i < 128; i++) {
@@ -562,7 +514,7 @@ void mmm_128x128(cnndata_t InA[128][128], cnndata_t InB[128][128], cnndata_t Out
 }
 
 void mmm_64x64(cnndata_t InA[64][64], cnndata_t InB[64][64], cnndata_t OutC[64][64]) {
-  std::cout << "--- non-recursive mmm_64x64 ---" << std::endl;
+  // std::cout << "--- non-recursive mmm_64x64 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_64x64_0:for (i = 0; i < 64; i++) {
@@ -577,7 +529,7 @@ void mmm_64x64(cnndata_t InA[64][64], cnndata_t InB[64][64], cnndata_t OutC[64][
 }
 
 void mmm_32x32(cnndata_t InA[32][32], cnndata_t InB[32][32], cnndata_t OutC[32][32]) {
-  std::cout << "--- non-recursive mmm_32x32 ---" << std::endl;
+  // std::cout << "--- non-recursive mmm_32x32 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_32x32_0:for (i = 0; i < 32; i++) {
@@ -592,7 +544,7 @@ void mmm_32x32(cnndata_t InA[32][32], cnndata_t InB[32][32], cnndata_t OutC[32][
 }
 
 void mmm_16x16(cnndata_t InA[16][16], cnndata_t InB[16][16], cnndata_t OutC[16][16]) {
-  std::cout << "--- non-recursive mmm_16x16 ---" << std::endl;
+  // std::cout << "--- non-recursive mmm_16x16 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_16x16_0:for (i = 0; i < 16; i++) {
@@ -607,7 +559,7 @@ void mmm_16x16(cnndata_t InA[16][16], cnndata_t InB[16][16], cnndata_t OutC[16][
 }
 
 void mmm_8x8(cnndata_t InA[8][8], cnndata_t InB[8][8], cnndata_t OutC[8][8]) {
-  std::cout << "--- non-recursive mmm_8x8 ---" << std::endl;
+  // std::cout << "--- non-recursive mmm_8x8 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_8x8_0:for (i = 0; i < 8; i++) {
@@ -623,7 +575,7 @@ void mmm_8x8(cnndata_t InA[8][8], cnndata_t InB[8][8], cnndata_t OutC[8][8]) {
 
 
 void mmm_4x4(cnndata_t InA[4][4], cnndata_t InB[4][4], cnndata_t OutC[4][4]) {
-  std::cout << "--- non-recursive mmm_4x4 ---" << std::endl;
+  // std::cout << "--- non-recursive mmm_4x4 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_4x4_0:for (i = 0; i < 4; i++) {
@@ -638,7 +590,7 @@ void mmm_4x4(cnndata_t InA[4][4], cnndata_t InB[4][4], cnndata_t OutC[4][4]) {
 }
 
 void mmm_2x2(cnndata_t InA[2][2], cnndata_t InB[2][2], cnndata_t OutC[2][2]) {
-  std::cout << "--- non-recursive mmm_2x2 ---" << std::endl;
+  // std::cout << "--- non-recursive mmm_2x2 ---" << std::endl;
   index_t i, j, k;
   cnndata_t output;
 	mmm_2x2_0:for (i = 0; i < 2; i++) {

@@ -91,8 +91,8 @@ static const std::string cnn_error_message =
 
 bool verify(cnndata_t *ref, cnndata_t *checkit) {
     uint64_t row, col;
-
-
+    uint64_t correct;
+    correct = 1;
     for(row = 0; row < 128; row++) {
         for(col = 0; col < 128 ; col++) {
             cnndata_t refval = ARRAY2(ref,row,col,128,128);
@@ -100,13 +100,19 @@ bool verify(cnndata_t *ref, cnndata_t *checkit) {
             cnndata_t checkval = ARRAY2(checkit,row,col,128,128) ;
 
             if (!nearlyEqual(checkval, refval)) {
-                printf("\n***Result does not match reference:  "
-                        "row = %lu, col = %lu, refval = %lu, checkval = %lu***\n", row, col, refval, checkval);
-                return 0;
+                std::cout << "***Result does not match reference:  row = " << row << ", col = " << col << ", refval = " << refval << ", checkval = " << checkval << "***" << std::endl;
+                //printf("\n***Result does not match reference:  "
+                //        "row = %lu, col = %lu, refval = %lu, checkval = %lu***\n", row, col, refval, checkval);
+                correct = 0;
+            }
+            else {
+            	std::cout << "***Matches:  row = " << row << ", col = " << col << ", refval = " << refval << ", checkval = " << checkval << "***" << std::endl;
             }
         }
     }
-    
+    if (correct == 0) {
+        return 0;
+    }
     return 1;
 }
 
@@ -124,9 +130,33 @@ bool cnn_check(cnndata_t *ptr_inA, cnndata_t *ptr_inB, cnndata_t *ptr_output,
     	std::cout << "inA does not match..." << std::endl;
     }
 
+    // checking the input A Matrix
+    for(row = 0; row < 128; row++) {
+        for(col = 0; col < 128 ; col++) {
+            cnndata_t refval = ARRAY2(ref_inA,row,col,128,128);
+            cnndata_t checkval = ARRAY2(ptr_inA,row,col,128,128) ;
+            if (!nearlyEqual(checkval, refval)) {
+                std::cout << "*** inA Result Does Not Match:  row = " << row << ", col = " << col << ", refval = " << refval << ", checkval = " << checkval << "***" << std::endl;
+            }
+        }
+    }
+
     if (!verify(ref_inB, ptr_inB)){
     	std::cout << "inB does not match..." << std::endl;
     }
+
+    // checking the input B Matrix
+    for(row = 0; row < 128; row++) {
+        for(col = 0; col < 128 ; col++) {
+            cnndata_t refval = ARRAY2(ref_inB,row,col,128,128);
+            cnndata_t checkval = ARRAY2(ptr_inB,row,col,128,128) ;
+            if (!nearlyEqual(checkval, refval)) {
+                std::cout << "*** inB Result Does Not Match:  row = " << row << ", col = " << col << ", refval = " << refval << ", checkval = " << checkval << "***" << std::endl;
+            }
+        }
+    }
+
+
     std::cout << "Verifying matrix multiply result..." << std::endl;
     // initialize ref_output to 0 for easy multiply accumulate
     for (row = 0; row < 128; row++) {
@@ -144,9 +174,36 @@ bool cnn_check(cnndata_t *ptr_inA, cnndata_t *ptr_inB, cnndata_t *ptr_output,
         }
     }
 
+    /*
     if (!verify(ref_output, ptr_output)){
         mismatch = 1;
     }
+    */
+
+    mismatch = 0;
+    for(row = 0; row < 128; row++) {
+        for(col = 0; col < 128 ; col++) {
+            cnndata_t refval = ARRAY2(ref_output,row,col,128,128);
+
+            cnndata_t checkval = ARRAY2(ptr_output,row,col,128,128) ;
+
+            if (!nearlyEqual(checkval, refval)) {
+                std::cout << "***Result does not match reference:  row = " << row << ", col = " << col << ", refval = " << refval << ", checkval = " << checkval << "***" << std::endl;
+                //printf("\n***Result does not match reference:  "
+                //        "row = %lu, col = %lu, refval = %lu, checkval = %lu***\n", row, col, refval, checkval);
+                mismatch = 1;
+            }
+
+
+            else {
+                 std::cout << "***Matches:  row = " << row << ", col = " << col << ", refval = " << refval << ", checkval = " << checkval << "***" << std::endl;
+
+            }
+
+        }
+    }
+
+
 
     return mismatch;
 }
