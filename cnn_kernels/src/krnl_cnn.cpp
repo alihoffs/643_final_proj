@@ -70,6 +70,33 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
 
   index_t i, j, k, j_offset, k_offset;
 
+  #ifdef NON_RECURSIVE_128
+  cnndata_t inputs[2][128][128];
+#pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=bram
+  cnndata_t mults[128][128];
+#pragma HLS BIND_STORAGE variable=mults type=ram_2p impl=bram
+  cnndata_t elem_a, elem_b;
+
+  // initialize inputs
+  top_0:for (j = 0, j < 128; j++) {
+    top_1:for (k = 0; k < 128; k++) {
+        inputs[0][j][k] = ARRAYi_X(inA, j, k, 128, 128); // A21+A22
+        inputs[1][j][k] = ARRAYi_X(inB, j, k, 128, 128); // B21-B11
+    }
+  }
+
+      mmm_128x128(inputs[0], inputs[1], mults);
+
+  top_0:for (j = 0; j < 128; j++) {
+    top_C11_1:for (k = 0; k < 128; k++) {
+#pragma HLS PIPELINE
+    ARRAYi_X(OutC, j, k, 128, 128) = mults[j][k];
+    }
+  }
+
+#else
+
+
   cnndata_t inputs[14][64][64];
 #pragma HLS BIND_STORAGE variable=inputs type=ram_2p impl=bram
   cnndata_t mults[7][64][64];
@@ -80,13 +107,13 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
   // initialize A21
   top_X21_0:for (j = 0, j_offset = 64; j < 64; j++, j_offset++) {
     top_X21_1:for (k = 0; k < 64; k++) {
-//    	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
-//    	elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
-        inputs[2][j][k] = ARRAYi_X(inA, j_offset, k, 128, 128); // A21+A22
-        inputs[10][j][k] = ARRAYi_X(inA, j_offset, k, 128, 128);// A21-A11
+   	elem_a = ARRAYi_X(inA, j_offset, k, 128, 128);
+   	elem_b = ARRAYi_X(inB, j_offset, k, 128, 128);
+        inputs[2][j][k] = elem_a; // A21+A22
+        inputs[10][j][k] = elem_a; // A21-A11
 
-        inputs[7][j][k] = ARRAYi_X(inB, j_offset, k, 128, 128); // B21-B11
-        inputs[13][j][k] = ARRAYi_X(inB, j_offset, k, 128, 128);// B21+B22
+        inputs[7][j][k] = elem_b; // B21-B11
+        inputs[13][j][k] = elem_b;// B21+B22
     }
   }
 
@@ -175,7 +202,7 @@ void krnl_cnn_layerX(const cnndata_t* inA, const cnndata_t* inB,
       ARRAYi_X(OutC, j_offset, k_offset, 128, 128) = mults[0][j][k] - mults[1][j][k] + mults[2][j][k] + mults[5][j][k];  // C22
     }
   }
-
+#endif
 }
 
 #ifdef __VITIS_CL__ // for lab 3

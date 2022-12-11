@@ -83,7 +83,7 @@ typedef uint32_t index_t;
 //#define NON_RECURSIVE_8
 //#define NON_RECURSIVE_16
 //#define NON_RECURSIVE_32
- #define NON_RECURSIVE_64
+#define NON_RECURSIVE_64
 
 //#define NON_RECURSIVE_128
 //#define NON_RECURSIVE_512
